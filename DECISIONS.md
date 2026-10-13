@@ -20,11 +20,12 @@
 | 2026-10-13 | PWA icons drawn by `scripts/make-icons.mjs` (Node zlib, no dependencies). | Reproducible, no design tool or extra package. | `@vite-pwa/assets-generator` (adds sharp). |
 | 2026-10-13 | `@playwright/test@1.64.0` (dev) on the installed Google Chrome (`channel: 'chrome'`). | No ~150 MB browser download; GitHub's runners have Chrome preinstalled. | Bundled Chromium (`npx playwright install chromium`), one config line away. |
 | 2026-10-13 | E2E runs a production-optimised `--mode e2e` build that exposes `window.__buzzy`; the test hook is compiled out of the real production bundle. | Lets tests drive moving 3D targets reliably without shipping test code. | Testing the dev server (no service worker, unminified code). |
+| 2026-10-13 | Tamil glyph screenshot tests capture a static 2D Glyph Sheet (`/?dev=glyphs`) drawn with the game's own glyph functions, not the 3D scene. Plus an ink-signature check (has ink, isn't the missing-glyph box, all six distinct). | Deterministic pixels; the WebGL scene animates and its anti-aliasing varies by GPU. The signature check catches a broken font even if someone accepts a bad baseline. | Screenshotting the running game. |
+| 2026-10-13 | Screenshot baselines are per platform (`*-darwin.png` committed); 1% pixel tolerance, and tighter per-pixel colour matching on the tracing boards because the letter is faint there. | Fonts differ by OS. A mutation check (ஆ swapped for அ) fails three tests. | One cross-platform baseline: needs a self-hosted font first (Baloo Thambi 2), which would also make CI baselines match macOS. |
 | 2026-10-13 | Tamil stroke files for ஆ and உ are placeholders. | Brief: the owner authors Tamil stroke order with `/?dev=strokes`. | — |
 
 ## Not built yet (from the brief)
 
-- Screenshot (visual-regression) tests for the Tamil glyphs
 - Lighthouse / installability check in CI
 - `scripts/check-budgets.ts`, `scripts/optimize-assets.ts` (gltf-transform + meshopt), `scripts/build-letters.ts`
 - Automatic quality-tier downgrade while playing (a tier is picked at boot)

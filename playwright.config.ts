@@ -8,7 +8,7 @@ const BASE = `http://127.0.0.1:${PORT}/play/`;
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 120_000,
-  expect: { timeout: 20_000 },
+  expect: { timeout: 20_000, toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
   fullyParallel: true,
   workers: process.env.CI ? 1 : 3,
   retries: process.env.CI ? 1 : 0,

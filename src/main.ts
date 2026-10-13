@@ -29,6 +29,10 @@ async function boot(): Promise<void> {
     (await import('./dev/strokeEditor')).mountStrokeEditor(app);
     return;
   }
+  if ((import.meta.env.DEV || import.meta.env.MODE === 'e2e') && devTool === 'glyphs') {
+    await (await import('./dev/glyphSheet')).mountGlyphSheet(app);
+    return;
+  }
 
   const quality = pickQuality();
   const save = loadSave();

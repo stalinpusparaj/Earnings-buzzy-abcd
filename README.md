@@ -25,6 +25,9 @@ npm run build      # type-check + production build into dist/ (includes the serv
 - the game plays when `localStorage` throws or is missing
 - after one online visit, the game loads and plays offline, in both languages
 - the manifest and icons are served, and portrait screens show the rotate prompt
+- **Tamil glyph screenshots** (`glyphs.spec.ts`): each of அ ஆ இ ஈ உ ஊ as bubble, badge and 3D-letter face, plus the ஆ/உ tracing boards, compared against approved baselines. A separate check proves every glyph has real ink, isn't the missing-glyph box, and differs from the others.
+
+Screenshot baselines live in `tests/e2e/glyphs.spec.ts-snapshots/` and are per platform, because Tamil fonts differ by OS. The committed ones are `*-darwin.png` (macOS, Tamil Sangam MN). A Linux CI runner needs its own baselines, made once with `--update-snapshots` on that runner, plus a Tamil font such as `fonts-noto-core`. After an intended change (for example new Tamil strokes), review `/?dev=glyphs`, then run `npx playwright test glyphs --update-snapshots`.
 
 The tests drive the game through `tests/e2e/harness.js`, which projects 3D objects to screen space and dispatches real pointer events. Speech is stubbed so voice lines finish instantly. To use Playwright's bundled Chromium instead of Chrome, remove `channel: 'chrome'` from `playwright.config.ts` and run `npx playwright install chromium`.
 
@@ -35,6 +38,7 @@ Production builds include a service worker (`vite-plugin-pwa`, `sw.js`) and a we
 Dev-only tools (stripped from production builds):
 
 - `/?dev=perf`: fps, draw calls, triangles, GPU memory
+- `/?dev=glyphs`: Glyph Sheet. Every letter drawn exactly as the game draws it (bubble, badge, 3D-letter face, tracing board). Use it for the Tamil review. Also available in the e2e build.
 - `/?dev=strokes`: Stroke Editor. Pick a letter, click to place points, Enter ends a stroke, Export copies the JSON for `src/data/strokes/{lang}/{id}.json`.
 
 ## Deploy to a subpath

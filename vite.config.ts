@@ -6,6 +6,10 @@ export default defineConfig({
   base: './',
   build: { target: 'es2020', assetsInlineLimit: 0, chunkSizeWarningLimit: 800 },
   test: { include: ['tests/unit/**/*.test.ts'] },
+  // Build and test output lives inside the project; don't let the dev server watch or scan it
+  // (an e2e run rewrites dist-e2e/index.html, which would reload the page you're playing).
+  server: { watch: { ignored: ['**/dist/**', '**/dist-e2e/**', '**/test-results/**', '**/playwright-report/**'] } },
+  optimizeDeps: { entries: ['index.html'] },
   plugins: [
     VitePWA({
       // Registered by hand in src/core/offline.ts (an injected inline script would break the CSP).
