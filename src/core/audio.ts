@@ -1,5 +1,7 @@
 // Web Audio wrapper: music / SFX buses with ducking (brief §8). Every sound is
 // synthesised here, so the game ships with no audio files until real VO arrives.
+import { PlaybackSession } from './audioSession';
+
 export type SfxName = 'pop' | 'boop' | 'chime' | 'whoosh' | 'bloom' | 'celebrate' | 'buzz';
 
 const MUSIC_LEVEL = 0.35;
@@ -25,9 +27,13 @@ export class AudioEngine {
   private nextBeatTime = 0;
   private beat = 0;
   private volume = 1;
+  /** iOS silent-switch handling (see audioSession.ts). */
+  readonly session = new PlaybackSession();
 
   /** Call from the first tap (iOS needs a user gesture to start audio). */
   unlock(): void {
+    // Ask for the playback session before any audio starts, so the iOS silent switch doesn't mute the game.
+    this.session.start();
     if (!this.ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
@@ -45,10 +51,12 @@ export class AudioEngine {
   }
 
   async resume(): Promise<void> {
+    this.session.resume();
     if (this.ctx && this.ctx.state !== 'running') await this.ctx.resume().catch(() => undefined);
   }
 
   suspend(): void {
+    this.session.pause();
     void this.ctx?.suspend().catch(() => undefined);
   }
 

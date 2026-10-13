@@ -35,7 +35,8 @@ Vite prints a **Network** address such as `http://192.168.1.20:4174/`. On the de
 - [ ] The loading bar moves; no error state (pink bar).
 - [ ] **Load time:** `ready` ≤ **5.0 s** on a first visit (site data cleared). Phones: use mobile data with Wi-Fi off. Desktop Chrome: DevTools → Network → Disable cache + throttling **Fast 4G**. Record the value.
 - [ ] Portrait shows only the rotating-phone animation; turning to landscape shows the game.
-- [ ] Tap Play: music starts within a second. **iOS:** repeat with the silent switch on and note whether sound is muted (web audio follows the switch by default).
+- [ ] Tap Play: music starts within a second.
+- [ ] **iPhone/iPad, silent switch ON:** music, sound effects and Buzzy's voice still play. Also check the HUD mute button silences them, and other apps' audio behaves normally after you leave the game. Note the iOS version: 16.4+ uses Safari's Audio Session API; older versions use a silent-loop fallback.
 - [ ] Buzzy flies in and says the welcome line, then "Pick a flower!". Note whether an English voice exists.
 - [ ] Note the starting `tier`/`dpr`, and whether a `[quality] boot probe` line appeared.
 
@@ -79,7 +80,7 @@ The brief's "no failure" rule (P4): wrong answers never block the child.
 
 - [ ] The mute button silences music, sound effects and voice, and stays muted after a reload.
 - [ ] Music gets quieter while Buzzy talks.
-- [ ] Switch apps or lock the screen for 30 s, then come back: the game and music resume.
+- [ ] Switch apps or lock the screen for 30 s, then come back: the game and music resume. **Older iOS (< 16.4):** while the game is in the background, no "Now Playing" controls should stay on the lock screen.
 - [ ] Optional: an incoming call or another app's audio, then return.
 
 ## 7. Grown-ups area

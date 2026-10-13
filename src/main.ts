@@ -116,7 +116,7 @@ async function boot(): Promise<void> {
   game = new Game({ rc, loop, input, rig, garden, stage, buzzy, particles, audio, voice, hud, quality, save, overlay });
   // Test hook for dev builds and the e2e build only; compiled out of production.
   if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') Object.assign(window, {
-      __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage, loop, particles, governor,
+      __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage, loop, particles, governor, audio,
         quality: () => ({ tier: governor.tier, dpr: rc.renderer.getPixelRatio(), particles: particles.limit, avgMs: governor.averageMs }),
         setTier: (t: Tier) => {
           governor.tier = t;
