@@ -30,7 +30,7 @@ npm run check-budgets     # full budget report against dist/ (the build runs it 
 - quality step-down: 60 ms of artificial work per frame drops high → mid → low (pixel ratio 2 → 1.5 → 1) one tier per 3 s and never back up; a single 400 ms hitch changes nothing
 - **Tamil glyph screenshots** (`glyphs.spec.ts`): each of அ ஆ இ ஈ உ ஊ as bubble, badge and 3D-letter face, plus the ஆ/உ tracing boards, compared against approved baselines. A separate check proves every glyph has real ink, isn't the missing-glyph box, and differs from the others.
 
-Screenshot baselines live in `tests/e2e/glyphs.spec.ts-snapshots/` and are per platform, because Tamil fonts differ by OS. The committed ones are `*-darwin.png` (macOS, Tamil Sangam MN). A Linux CI runner needs its own baselines, made once with `--update-snapshots` on that runner, plus a Tamil font such as `fonts-noto-core`. After an intended change (for example new Tamil strokes), review `/?dev=glyphs`, then run `npx playwright test glyphs --update-snapshots`.
+Screenshot baselines live in `tests/e2e/glyphs.spec.ts-snapshots/`. The letters use the self-hosted Baloo fonts, so their shapes are the same on every OS, but text anti-aliasing still differs, so baselines are per platform. The committed ones are `*-darwin.png` (macOS); a Linux CI runner needs its own, made once with `--update-snapshots` on that runner. After an intended change (for example new Tamil strokes), review `/?dev=glyphs`, then run `npx playwright test glyphs --update-snapshots`.
 
 The tests drive the game through `tests/e2e/harness.js`, which projects 3D objects to screen space and dispatches real pointer events. Speech is stubbed so voice lines finish instantly. To use Playwright's bundled Chromium instead of Chrome, remove `channel: 'chrome'` from `playwright.config.ts` and run `npx playwright install chromium`.
 
@@ -92,7 +92,7 @@ The game's loader decodes meshopt with the decoder bundled in the JS. That's why
 
 1. Add an entry to `src/data/letters.{lang}.json` (see `LetterDef` in `src/core/types.ts`).
 2. Add the object model to `public/assets/models/{objectModel}.glb` and run `npm run optimize-assets`.
-3. For a `traceTrail` letter, add `src/data/strokes/{lang}/{id}.json` (author it with `/?dev=strokes`).
+3. For a `traceTrail` letter, add `src/data/strokes/{lang}/{id}.json`. Author it in `/?dev=strokes`, which shows the letter exactly where the tracing board will, so paths drawn down the middle of its strokes line up in the game.
 4. Add `{id}_sound` and `{id}_isfor` lines to `src/data/vo-manifest.json`.
 5. Run `npm test`. The content test checks every field, model, stroke file and voice line.
 
@@ -108,6 +108,7 @@ Edit `src/data/brand.config.json` (`partnerName`, `partnerLogo`, `accentColor`, 
 
 - **Higgsfield (AI-generated):** Buzzy, apple, bee, cat, duck, egg, fish, squirrel, goat, leaf, fly, ural, swing, bud, bloom, basket, gazebo and tree. Run through `optimize-assets`: 1.4 MB in total, each within its triangle budget.
 - **Built in code** (`src/procedural/`): island, path, pond, sky, clouds, rocks, bushes, grass, flowers, glyphs, bubbles, picnic cloth, tracing board and shadows.
+- **Fonts:** Baloo 2 (Latin) and Baloo Thambi 2 (Tamil), weight 800, SIL Open Font License 1.1, self-hosted in `public/fonts/` (36 KB together). `npm run fonts` copies them from the Fontsource packages. They're loaded with the FontFace API before any letter is drawn, and cached for offline play.
 - **Synthesised in code** (`src/core/audio.ts`): all sound effects and the background music.
 - **Voice-over:** the browser's speech synthesis until recorded files are listed in `vo-manifest.json`.
 

@@ -1,7 +1,8 @@
 import { lettersFor, strokesFor } from '../core/content';
 import { GLYPH_FONT, theme } from '../core/theme';
 import type { Lang, LetterDef } from '../core/types';
-import { drawGlyph, glyphTexture } from '../procedural/glyph';
+import { loadGlyphFonts } from '../core/fonts';
+import { TRACE_GLYPH_FIT, drawGlyph, glyphTexture } from '../procedural/glyph';
 import { TraceBoard } from '../minigames/traceBoard';
 
 /**
@@ -85,7 +86,7 @@ export function glyphSignature(glyph: string): { coverage: number; grid: number[
 }
 
 export async function mountGlyphSheet(root: HTMLElement): Promise<void> {
-  await document.fonts.ready;
+  const fontsLoaded = await loadGlyphFonts();
   const page = document.createElement('div');
   page.className = 'glyph-sheet';
   page.innerHTML = `<style>
@@ -108,5 +109,5 @@ export async function mountGlyphSheet(root: HTMLElement): Promise<void> {
     lettersFor(lang).forEach((l, i) => page.appendChild(row(l, i)));
   }
   root.appendChild(page);
-  Object.assign(window, { __glyphSheet: { signature: glyphSignature, font: GLYPH_FONT, ready: true } });
+  Object.assign(window, { __glyphSheet: { signature: glyphSignature, draw: drawGlyph, fit: TRACE_GLYPH_FIT, font: GLYPH_FONT, fontsLoaded, ready: true } });
 }

@@ -1,12 +1,14 @@
 import { lettersFor, strokesFor } from '../core/content';
 import type { Point2 } from '../core/types';
-import { drawGlyph } from '../procedural/glyph';
+import { loadGlyphFonts } from '../core/fonts';
+import { TRACE_GLYPH_FIT, drawGlyph } from '../procedural/glyph';
 
 /**
  * Dev-only Stroke Editor (/?dev=strokes). Pick a letter, click to place points,
  * Enter ends a stroke, Backspace removes the last point, Export copies the JSON.
  */
-export function mountStrokeEditor(root: HTMLElement): void {
+export async function mountStrokeEditor(root: HTMLElement): Promise<void> {
+  await loadGlyphFonts();
   const letters = [...lettersFor('en'), ...lettersFor('ta')];
   root.innerHTML = `
     <div class="dev-editor">
@@ -35,7 +37,7 @@ export function mountStrokeEditor(root: HTMLElement): void {
     ctx.fillRect(0, 0, 640, 640);
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.strokeRect(64, 64, 512, 512);
-    drawGlyph(ctx, current().glyph, 320, 320, 460, { fill: 'rgba(255,240,220,0.3)', outline: 'rgba(0,0,0,0)', outlineFrac: 0 });
+    drawGlyph(ctx, current().glyph, 320, 320, 512 * TRACE_GLYPH_FIT, { fill: 'rgba(255,240,220,0.3)', outline: 'rgba(0,0,0,0)', outlineFrac: 0 });
     strokes.forEach((s, i) => {
       ctx.strokeStyle = `hsl(${i * 70}, 90%, 65%)`;
       ctx.fillStyle = ctx.strokeStyle;

@@ -20,6 +20,12 @@ import { GLYPH_FONT, theme } from '../core/theme';
 
 export type GlyphStyle = { fill: string; outline: string; outlineFrac?: number; bg?: string; ring?: string };
 
+/**
+ * How big a letter sits in its 0–1 tracing box: its ink fills 90% of the box, centred.
+ * Shared by the tracing board and the Stroke Editor, so authored strokes line up on the board.
+ */
+export const TRACE_GLYPH_FIT = 0.9;
+
 /** Draw `glyph` fitted into a centred boxW × boxH box, using its real ink bounds. */
 export function drawGlyph(ctx: CanvasRenderingContext2D, glyph: string, cx: number, cy: number, boxW: number, style: GlyphStyle, boxH = boxW): void {
   const probe = 200;

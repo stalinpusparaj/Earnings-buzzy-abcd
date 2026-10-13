@@ -14,6 +14,10 @@ test('a full play session makes same-origin requests only', async ({ page, conte
   const foreign = requests.filter((u) => !u.startsWith('data:') && !u.startsWith('blob:') && new URL(u).origin !== origin);
   expect(requests.length).toBeGreaterThan(10);
   expect(foreign).toEqual([]);
+  // The glyph fonts are self-hosted, so they show up as same-origin requests.
+  for (const font of ['baloo-2-latin-800-normal.woff2', 'baloo-thambi-2-tamil-800-normal.woff2']) {
+    expect(requests.some((u) => u.endsWith(`/fonts/${font}`)), font).toBe(true);
+  }
 });
 
 test('garden stays within the draw-call budget and the HUD is icon-only', async ({ page }) => {

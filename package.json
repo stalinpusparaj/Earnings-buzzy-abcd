@@ -14,12 +14,15 @@
     "icons": "node scripts/make-icons.mjs",
     "optimize-assets": "node scripts/optimize-assets.ts",
     "check-budgets": "node scripts/check-budgets.ts",
-    "qa": "vite build --mode e2e --outDir dist-e2e && vite preview --outDir dist-e2e --host --port 4174 --strictPort"
+    "qa": "vite build --mode e2e --outDir dist-e2e && vite preview --outDir dist-e2e --host --port 4174 --strictPort",
+    "fonts": "node scripts/copy-fonts.ts"
   },
   "dependencies": {
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@fontsource/baloo-2": "5.3.0",
+    "@fontsource/baloo-thambi-2": "5.3.0",
     "@gltf-transform/core": "4.5.1",
     "@gltf-transform/extensions": "4.5.1",
     "@gltf-transform/functions": "4.5.1",

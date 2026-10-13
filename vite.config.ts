@@ -35,7 +35,7 @@ export default defineConfig({
       workbox: {
         // Precache the shell only (~250 KB). Models and recorded audio are cached the first
         // time they load, so a first visit never downloads them twice.
-        globPatterns: ['**/*.{js,css,html,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,png,webmanifest,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,

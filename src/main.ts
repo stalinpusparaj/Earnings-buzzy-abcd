@@ -7,6 +7,7 @@ import { Input } from './core/input';
 import { Loop } from './core/loop';
 import { pickQuality, settingsFor, type Tier } from './core/quality';
 import { FrameGovernor } from './core/qualityGovernor';
+import { loadGlyphFonts } from './core/fonts';
 import { enableOffline } from './core/offline';
 import { createRenderContext } from './core/renderer';
 import { loadSave } from './core/storage';
@@ -27,7 +28,7 @@ async function boot(): Promise<void> {
   const app = document.getElementById('app')!;
   const devTool = new URLSearchParams(location.search).get('dev');
   if (import.meta.env.DEV && devTool === 'strokes') {
-    (await import('./dev/strokeEditor')).mountStrokeEditor(app);
+    await (await import('./dev/strokeEditor')).mountStrokeEditor(app);
     return;
   }
   if ((import.meta.env.DEV || import.meta.env.MODE === 'e2e') && devTool === 'glyphs') {
@@ -39,6 +40,8 @@ async function boot(): Promise<void> {
     return;
   }
 
+  // Glyph textures are drawn on canvas, which won't wait for web fonts: load them first.
+  const fontsReady = loadGlyphFonts();
   const quality = pickQuality();
   const save = loadSave();
   const rc = createRenderContext(app, quality);
@@ -93,6 +96,7 @@ async function boot(): Promise<void> {
   try {
     await enableOffline();
     await preload([...SHARED_MODELS, ...modelIdsFor(save.lang)], (done, total) => start.progress((done / total) * 0.9));
+    await fontsReady;
     await Promise.all([garden.loadModels(), buzzy.load(), garden.setLanguage(save.lang, new Set(save.bloomed))]);
   } catch (err) {
     console.error(err);

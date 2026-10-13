@@ -48,3 +48,9 @@ test('every Tamil glyph has real ink, differs from the missing-glyph box, and fr
     }
   }
 });
+
+test('the self-hosted Baloo fonts load before any glyph is drawn', async ({ page }) => {
+  expect(await page.evaluate(() => (window as unknown as { __glyphSheet: { fontsLoaded: boolean } }).__glyphSheet.fontsLoaded)).toBe(true);
+  // Both script ranges resolve to the self-hosted family (Latin: Baloo 2, Tamil: Baloo Thambi 2).
+  expect(await page.evaluate(() => document.fonts.check('800 40px "Buzzy Glyph"', 'Aஅ'))).toBe(true);
+});

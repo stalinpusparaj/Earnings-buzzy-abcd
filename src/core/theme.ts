@@ -23,7 +23,8 @@ export const theme = {
   startDot: '#4CD964',
 } as const;
 
-// One font stack for every canvas-drawn glyph. Tamil glyphs fall through to the
-// platform Tamil font (Tamil Sangam MN on Apple, Noto Sans Tamil on Android).
+// One font stack for every canvas-drawn glyph. "Buzzy Glyph" is the self-hosted
+// Baloo 2 (Latin) + Baloo Thambi 2 (Tamil) pair from core/fonts.ts; the platform fonts
+// after it only matter if those files fail to load.
 export const GLYPH_FONT =
-  '"Baloo 2", "Arial Rounded MT Bold", "Tamil Sangam MN", "Noto Sans Tamil", "Nirmala UI", "Latha", sans-serif';
+  '"Buzzy Glyph", "Baloo 2", "Arial Rounded MT Bold", "Tamil Sangam MN", "Noto Sans Tamil", "Nirmala UI", "Latha", sans-serif';

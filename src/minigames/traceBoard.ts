@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import type { Point2 } from '../core/types';
 import { theme } from '../core/theme';
-import { drawGlyph } from '../procedural/glyph';
+import { TRACE_GLYPH_FIT, drawGlyph } from '../procedural/glyph';
 import { rng } from '../procedural/geo';
 import { pointAt, strokeLength, type Stroke } from './traceMath';
 
@@ -45,11 +45,9 @@ export class TraceBoard {
       ctx.arc(rand() * PX, rand() * PX, 3 + rand() * 7, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Faint glyph sized to the stroke data's bounds so guide and letter line up.
-    const all = this.strokes.flat();
-    const [x0, y0] = this.px([Math.min(...all.map((p) => p[0])), Math.max(...all.map((p) => p[1]))]);
-    const [x1, y1] = this.px([Math.max(...all.map((p) => p[0])), Math.min(...all.map((p) => p[1]))]);
-    drawGlyph(ctx, this.glyph, (x0 + x1) / 2, (y0 + y1) / 2, Math.max(x1 - x0, PX * 0.3) * 1.15, { fill: 'rgba(255,240,220,0.22)', outline: 'rgba(0,0,0,0)', outlineFrac: 0 }, y1 - y0);
+    // Faint glyph placed exactly as the Stroke Editor shows it, so authored strokes follow it.
+    const [cx, cy] = this.px([0.5, 0.5]);
+    drawGlyph(ctx, this.glyph, cx, cy, PX * BOX * TRACE_GLYPH_FIT, { fill: 'rgba(255,240,220,0.22)', outline: 'rgba(0,0,0,0)', outlineFrac: 0 });
     return c;
   }
 

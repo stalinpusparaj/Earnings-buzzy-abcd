@@ -35,9 +35,9 @@ const js = files(DIST).filter((f) => f.endsWith('.js'));
 check('JS (all chunks, gzip)', `${js.length} files`, js.reduce((s, f) => s + gz(f), 0), LIMITS.jsGzip, kb);
 
 // Transferred until the "tap to start" screen: HTML + CSS + the boot JS.
-const shell = [join(DIST, 'index.html'), ...files(join(DIST, 'assets')).filter((f) => /\.(js|css)$/.test(f))];
+const shell = [join(DIST, 'index.html'), ...files(join(DIST, 'assets')).filter((f) => /\.(js|css)$/.test(f)), ...files(join(DIST, 'fonts')).filter((f) => f.endsWith('.woff2'))];
 const shellBytes = shell.reduce((s, f) => s + gz(f), 0);
-check('Transferred until tap-to-start', 'html + css + js (gzip)', shellBytes, LIMITS.toStart, kb);
+check('Transferred until tap-to-start', 'html + css + js + fonts (gzip)', shellBytes, LIMITS.toStart, kb);
 
 // Transferred until the garden is playable: shell + shared models + the heavier language's objects.
 const modelBytes = (id: string) => size(join(MODELS_DIR, `${id}.glb`));
