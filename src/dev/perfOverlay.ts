@@ -2,7 +2,7 @@ import type { WebGLRenderer } from 'three';
 import type { Loop } from '../core/loop';
 
 /** Dev-only (/?dev=perf): fps, draw calls, triangles, GPU memory counts. */
-export function mountPerfOverlay(parent: HTMLElement, renderer: WebGLRenderer, loop: Loop): void {
+export function mountPerfOverlay(parent: HTMLElement, renderer: WebGLRenderer, loop: Loop, status: () => string = () => ''): void {
   const el = document.createElement('pre');
   el.className = 'perf';
   el.id = 'perf';
@@ -14,7 +14,7 @@ export function mountPerfOverlay(parent: HTMLElement, renderer: WebGLRenderer, l
     acc += dt;
     if (acc < 0.5) return;
     const { render, memory } = renderer.info;
-    el.textContent = `fps ${(frames / acc).toFixed(0)}\ncalls ${render.calls}\ntris ${render.triangles}\ngeo ${memory.geometries} tex ${memory.textures}`;
+    el.textContent = `fps ${(frames / acc).toFixed(0)}\ncalls ${render.calls}\ntris ${render.triangles}\ngeo ${memory.geometries} tex ${memory.textures}\n${status()}`;
     frames = 0;
     acc = 0;
   });

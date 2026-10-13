@@ -26,13 +26,15 @@
 | 2026-10-14 | Dev dependencies for the pipeline (0 KB shipped): `@gltf-transform/core`, `functions`, `extensions` 4.5.1; `meshoptimizer` 1.3.0; `sharp` 0.35.5 (prebuilt binary, no install script). Runtime: three's bundled `MeshoptDecoder` (+~8 KB gzip). | Standard glTF tooling; the decoder is self-hosted inside the bundle. | — |
 | 2026-10-14 | CSP `script-src 'self' 'wasm-unsafe-eval'`. | The meshopt decoder compiles WebAssembly. This allows WASM only, not JavaScript `eval`. | Uncompressed GLBs (would break the size budgets). |
 | 2026-10-14 | `scripts/check-budgets.ts` runs at the end of `npm run build` and fails it on any exceeded budget (69 checks). Per-model triangle budgets live in `scripts/model-budgets.json`. | Brief §7.4: "the build fails if any is exceeded". | A CI-only check. |
+| 2026-10-14 | Quality tiers differ from brief §7.3 in one way: no shadow maps on any tier (the brief has 1024/2048 maps for mid/high). Tiers vary pixel ratio, particle budget and decorative-flower density instead. | Blob decals already ground every object, and a shadow pass would roughly double garden draw calls past the 80 budget. | Shadow maps on mid/high. |
+| 2026-10-14 | Frame-time governor: a boot probe (2 s after 0.5 s of warm-up; > 33 ms → −1 tier, > 45 ms → −2), then −1 tier when the 3 s rolling average exceeds 40 ms. Never steps up. Uses the loop's clamped dt (max 50 ms), which still detects every frame over 40 ms. | Brief §7.3 rules. Never stepping up avoids visible quality flicker. The probe runs while the Play button waits, so the child doesn't notice. | Stepping back up on recovery: can oscillate on thermally throttled phones. |
+| 2026-10-14 | The tier is not saved between visits. | Storage holds only the brief's five fields (§7.3), and the boot probe re-detects a slow device within ~2.5 s. | Persisting the tier. |
 | 2026-10-13 | Tamil stroke files for ஆ and உ are placeholders. | Brief: the owner authors Tamil stroke order with `/?dev=strokes`. | — |
 
 ## Not built yet (from the brief)
 
 - Lighthouse / installability check in CI
 - `scripts/build-letters.ts` (font-outline glyphs; needs self-hosted fonts first)
-- Automatic quality-tier downgrade while playing (a tier is picked at boot)
 - Cue Recorder (`/?dev=cues`) and the recorded song
 - Tamil text for the grown-ups area and `privacy.html`
 - Separately animated Buzzy wings and eyes (the GLB has them fused to the body)

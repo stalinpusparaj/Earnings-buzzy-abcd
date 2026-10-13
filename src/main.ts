@@ -5,7 +5,8 @@ import { CameraRig } from './core/cameraRig';
 import { modelIdsFor } from './core/content';
 import { Input } from './core/input';
 import { Loop } from './core/loop';
-import { pickQuality } from './core/quality';
+import { pickQuality, settingsFor, type Tier } from './core/quality';
+import { FrameGovernor } from './core/qualityGovernor';
 import { enableOffline } from './core/offline';
 import { createRenderContext } from './core/renderer';
 import { loadSave } from './core/storage';
@@ -64,10 +65,24 @@ async function boot(): Promise<void> {
   rc.scene.add(garden.root, stage.root, buzzy.root, particles.points);
   rig.jump(garden.overviewPose(rc.camera.aspect));
 
+  // Quality tier: device hints, then GPU limits, then the frame-time governor (boot probe + runtime step-down).
+  const applyTier = (tier: Tier) => {
+    const s = settingsFor(tier, quality.reducedMotion);
+    rc.renderer.setPixelRatio(s.dpr);
+    particles.setLimit(s.maxParticles);
+    garden.setDecorDensity(s.decor);
+  };
+  const startTier: Tier = rc.renderer.capabilities.maxTextureSize < 4096 ? 'low' : quality.tier;
+  applyTier(startTier);
+  const governor = new FrameGovernor(startTier, (tier, avgMs, reason) => {
+    applyTier(tier);
+    console.info(`[quality] ${reason === 'probe' ? 'boot probe' : 'sustained slow frames'}: avg ${avgMs.toFixed(0)} ms → ${tier}`);
+  });
+
   const loop = new Loop(rc.renderer, () => rc.renderer.render(rc.scene, rc.camera));
   loop.add((dt) => tweens.update(dt));
   loop.start();
-  if (import.meta.env.DEV && devTool === 'perf') (await import('./dev/perfOverlay')).mountPerfOverlay(overlay, rc.renderer, loop);
+  if (import.meta.env.DEV && devTool === 'perf') (await import('./dev/perfOverlay')).mountPerfOverlay(overlay, rc.renderer, loop, () => `tier ${governor.tier} dpr ${rc.renderer.getPixelRatio()}`);
 
   try {
     await enableOffline();
@@ -79,6 +94,8 @@ async function boot(): Promise<void> {
     return;
   }
   buzzy.placeAt(garden.buds[0]?.root.position.clone().setX(-3).setZ(16) ?? rc.camera.position.clone().setY(0));
+  // The full garden is now rendering behind the Play button: the governor's boot probe measures it.
+  loop.add((dt) => governor.sample(dt));
 
   const input = new Input(rc.renderer.domElement);
   let game: Game | null = null;
@@ -92,7 +109,15 @@ async function boot(): Promise<void> {
   hud.setMuted(save.volume === 0);
   game = new Game({ rc, loop, input, rig, garden, stage, buzzy, particles, audio, voice, hud, quality, save, overlay });
   // Test hook for dev builds and the e2e build only; compiled out of production.
-  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') Object.assign(window, { __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage } });
+  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') Object.assign(window, {
+      __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage, loop, particles, governor,
+        quality: () => ({ tier: governor.tier, dpr: rc.renderer.getPixelRatio(), particles: particles.limit, avgMs: governor.averageMs }),
+        setTier: (t: Tier) => {
+          governor.tier = t;
+          applyTier(t);
+        },
+      },
+    });
 
   await start.waitForTap();
   audio.unlock();

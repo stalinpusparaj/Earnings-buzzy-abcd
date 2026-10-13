@@ -1,4 +1,4 @@
-import { Group, Mesh, MeshBasicMaterial, CylinderGeometry, Vector3, type Object3D } from 'three';
+import { Group, Mesh, MeshBasicMaterial, CylinderGeometry, Vector3, type InstancedMesh, type Object3D } from 'three';
 import { modelInstance } from '../core/assets';
 import type { Pose } from '../core/cameraRig';
 import { lettersFor } from '../core/content';
@@ -19,6 +19,8 @@ export class GardenScene {
   buds: Bud[] = [];
   private budGroup = new Group();
   private clouds: Object3D[] = [];
+  private flowers: InstancedMesh;
+  private flowerTotal: number;
   private readonly spots = budSpots();
 
   constructor() {
@@ -38,7 +40,9 @@ export class GardenScene {
       this.root.add(bush);
     });
     const keepClear = [...this.spots, ...TREE_SPOTS, ...ROCK_SPOTS.map(([x, z]) => new Vector3(x, 0, z)), ...BUSH_SPOTS.map(([x, z]) => new Vector3(x, 0, z))];
-    this.root.add(makeGrassTufts(scatter(220, 3, keepClear, [0.8, 1.4])), makeFlowers(scatter(90, 5, keepClear, [0.9, 1.4]), 9));
+    this.flowers = makeFlowers(scatter(90, 5, keepClear, [0.9, 1.4]), 9);
+    this.flowerTotal = this.flowers.count;
+    this.root.add(makeGrassTufts(scatter(220, 3, keepClear, [0.8, 1.4])), this.flowers);
     // Clouds drift below and behind the island, so it reads as floating in the sky.
     for (let i = 0; i < 8; i++) {
       const cloud = makeCloud(300 + i, 1.6 + (i % 3) * 0.5);
@@ -51,6 +55,11 @@ export class GardenScene {
     this.gazeboCollider.position.copy(GAZEBO_POS).setY(3.2);
     this.gazeboCollider.visible = false;
     this.root.add(this.gazeboCollider);
+  }
+
+  /** Share of the decorative flowers drawn (quality tier). Grass stays: it's cheap and reads as ground. */
+  setDecorDensity(share: number): void {
+    this.flowers.count = Math.round(this.flowerTotal * Math.max(0, Math.min(1, share)));
   }
 
   /** GLB scenery: gazebo and trees. */

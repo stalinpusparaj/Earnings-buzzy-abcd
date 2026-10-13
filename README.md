@@ -27,6 +27,7 @@ npm run check-budgets     # full budget report against dist/ (the build runs it 
 - the game plays when `localStorage` throws or is missing
 - after one online visit, the game loads and plays offline, in both languages
 - the manifest and icons are served, and portrait screens show the rotate prompt
+- quality step-down: 60 ms of artificial work per frame drops high → mid → low (pixel ratio 2 → 1.5 → 1) one tier per 3 s and never back up; a single 400 ms hitch changes nothing
 - **Tamil glyph screenshots** (`glyphs.spec.ts`): each of அ ஆ இ ஈ உ ஊ as bubble, badge and 3D-letter face, plus the ஆ/உ tracing boards, compared against approved baselines. A separate check proves every glyph has real ink, isn't the missing-glyph box, and differs from the others.
 
 Screenshot baselines live in `tests/e2e/glyphs.spec.ts-snapshots/` and are per platform, because Tamil fonts differ by OS. The committed ones are `*-darwin.png` (macOS, Tamil Sangam MN). A Linux CI runner needs its own baselines, made once with `--update-snapshots` on that runner, plus a Tamil font such as `fonts-noto-core`. After an intended change (for example new Tamil strokes), review `/?dev=glyphs`, then run `npx playwright test glyphs --update-snapshots`.
@@ -43,6 +44,22 @@ Dev-only tools (stripped from production builds):
 - `/?dev=models`: Model Gallery. All 18 GLBs in a grid with the game's toon shading; add `&spin=0` to freeze. Use it after `npm run optimize-assets`.
 - `/?dev=glyphs`: Glyph Sheet. Every letter drawn exactly as the game draws it (bubble, badge, 3D-letter face, tracing board). Use it for the Tamil review. Also available in the e2e build.
 - `/?dev=strokes`: Stroke Editor. Pick a letter, click to place points, Enter ends a stroke, Export copies the JSON for `src/data/strokes/{lang}/{id}.json`.
+
+## Quality tiers
+
+The game picks a render tier at boot and steps down by itself on slow devices (`src/core/quality.ts`, `src/core/qualityGovernor.ts`):
+
+| Tier | Pixel ratio | Particles | Decorative flowers |
+|---|---|---|---|
+| high | up to 2 | 200 | all |
+| mid | up to 1.5 | 200 | all |
+| low | 1 | 100 (60 with reduced motion) | 40% |
+
+1. **Start:** device hints (`deviceMemory`, CPU cores), and GPUs with a max texture size under 4096 start on low.
+2. **Boot probe:** while the Play button waits, 2 s of frame timing (after 0.5 s of warm-up). An average over 33 ms drops one tier; over 45 ms drops two.
+3. **While playing:** if the average frame time stays above 40 ms for 3 s, drop one tier. The next step needs a fresh 3 s window. Quality never steps back up, so it can't flicker.
+
+Each step logs `[quality] …` to the console, and `/?dev=perf` shows the current tier.
 
 ## Deploy to a subpath
 

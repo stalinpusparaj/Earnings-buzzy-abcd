@@ -10,8 +10,10 @@ export class PollenParticles {
   private vel: Float32Array;
   private life: Float32Array;
   private next = 0;
+  private cap: number;
 
   constructor(private max: number) {
+    this.cap = max;
     this.pos = new Float32Array(max * 3);
     this.col = new Float32Array(max * 4);
     this.vel = new Float32Array(max * 3);
@@ -37,7 +39,7 @@ export class PollenParticles {
     const white = new Color('#ffffff');
     for (let n = 0; n < count; n++) {
       const i = this.next;
-      this.next = (this.next + 1) % this.max;
+      this.next = (this.next + 1) % this.cap;
       const theta = Math.random() * Math.PI * 2;
       const up = Math.random() * 0.9 + 0.3;
       const s = speed * (0.4 + Math.random() * 0.6);
@@ -47,6 +49,22 @@ export class PollenParticles {
       this.col.set([mix.r, mix.g, mix.b, 1], i * 4);
       this.life[i] = 0.9 + Math.random() * 0.5;
     }
+  }
+
+  /** Current particle budget (quality tier). */
+  get limit(): number {
+    return this.cap;
+  }
+
+  /** Lower (or restore) the particle budget; particles beyond it vanish immediately. */
+  setLimit(n: number): void {
+    this.cap = Math.max(1, Math.min(this.max, Math.floor(n)));
+    for (let i = this.cap; i < this.max; i++) {
+      this.life[i] = 0;
+      this.col[i * 4 + 3] = 0;
+    }
+    this.next %= this.cap;
+    this.points.geometry.attributes.color.needsUpdate = true;
   }
 
   update(dt: number): void {
