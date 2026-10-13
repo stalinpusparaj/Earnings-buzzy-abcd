@@ -14,12 +14,18 @@
 | 2026-10-13 | Sing-along stand-in: a camera rail past every bud with spoken lines. | No song or cue file exists yet. **TODO(content):** song + `cues.{lang}.json` + Cue Recorder. | Leaving the gazebo inert. |
 | 2026-10-13 | GLB textures shrunk to 512² JPEG (q85) before import. | Brings every model under 400 KB except the gazebo (519 KB, geometry-heavy), which needs meshopt in `optimize-assets`. | Shipping the raw 1.2–3.6 MB GLBs. |
 | 2026-10-13 | No `ASSETS.md` licence log, by the owner's choice. | Owner instruction. Brief §10.6 asks for one before shipping to schools. | — |
+| 2026-10-13 | `vite-plugin-pwa@2.0.0` (dev; pulls `workbox-build`/`workbox-window` 7.4.1). Ships `sw.js` 0.9 KB + Workbox runtime 7.1 KB gzip. | The brief's choice; supports Vite 8; generates the precache manifest from the build. | A hand-written service worker: less tooling, but the precache list and revisioning would need maintaining by hand. |
+| 2026-10-13 | Precache the app shell only (13 files); models and audio use runtime CacheFirst (`buzzy-packs`). On a first visit the game waits ≤ 4 s for the worker to control the page before loading models. | Each model is downloaded once, and all 18 are cached after one visit (the other language warms in the background). | Precaching every GLB: downloads ~3.9 MB twice on the first visit. |
+| 2026-10-13 | Service worker registered by hand (`src/core/offline.ts`); `injectRegister: false`. | The plugin's inline register script would violate the `script-src 'self'` CSP. | `injectRegister: 'inline'`. |
+| 2026-10-13 | PWA icons drawn by `scripts/make-icons.mjs` (Node zlib, no dependencies). | Reproducible, no design tool or extra package. | `@vite-pwa/assets-generator` (adds sharp). |
+| 2026-10-13 | `@playwright/test@1.64.0` (dev) on the installed Google Chrome (`channel: 'chrome'`). | No ~150 MB browser download; GitHub's runners have Chrome preinstalled. | Bundled Chromium (`npx playwright install chromium`), one config line away. |
+| 2026-10-13 | E2E runs a production-optimised `--mode e2e` build that exposes `window.__buzzy`; the test hook is compiled out of the real production bundle. | Lets tests drive moving 3D targets reliably without shipping test code. | Testing the dev server (no service worker, unminified code). |
 | 2026-10-13 | Tamil stroke files for ஆ and உ are placeholders. | Brief: the owner authors Tamil stroke order with `/?dev=strokes`. | — |
 
 ## Not built yet (from the brief)
 
-- PWA / offline caching (`vite-plugin-pwa`) and the airplane-mode test
-- Playwright e2e tests (same-origin network test, 200 random taps on the gate, screenshot tests)
+- Screenshot (visual-regression) tests for the Tamil glyphs
+- Lighthouse / installability check in CI
 - `scripts/check-budgets.ts`, `scripts/optimize-assets.ts` (gltf-transform + meshopt), `scripts/build-letters.ts`
 - Automatic quality-tier downgrade while playing (a tier is picked at boot)
 - Cue Recorder (`/?dev=cues`) and the recorded song

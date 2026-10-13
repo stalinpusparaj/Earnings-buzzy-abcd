@@ -8,16 +8,21 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:e2e": "vite build --mode e2e --outDir dist-e2e",
+    "e2e": "playwright test",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
     "@types/three": "0.186.0",
     "typescript": "7.0.2",
     "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0",
     "vitest": "5.0.4"
   }
 }

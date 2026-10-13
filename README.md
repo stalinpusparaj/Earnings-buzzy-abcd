@@ -10,8 +10,27 @@ Built with Vite + TypeScript + three.js (WebGL2). No frameworks, no third-party 
 npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests: trace rules, content + i18n checks
-npm run build      # type-check + production build into dist/
+npm run e2e        # Playwright end-to-end tests (uses your installed Google Chrome)
+npm run build      # type-check + production build into dist/ (includes the service worker)
 ```
+
+### End-to-end tests
+
+`npm run e2e` builds an e2e variant (`vite build --mode e2e`, production-optimised plus a test hook) and serves it under `/play/`. It then runs `tests/e2e/` in Chrome:
+
+- a full play session makes only same-origin requests (service-worker fetches included)
+- the garden stays within 80 draw calls; the child HUD has no text
+- all three templates play end to end (A, B, C) and in Tamil (அ). Wrong answers never block, cheat taps and off-path drags are ignored in tracing, Home abandons a letter, and progress survives a reload
+- 200 random taps never open the parent gate; a 3 s hold plus the right answer does; three wrong answers close it; parent settings apply
+- the game plays when `localStorage` throws or is missing
+- after one online visit, the game loads and plays offline, in both languages
+- the manifest and icons are served, and portrait screens show the rotate prompt
+
+The tests drive the game through `tests/e2e/harness.js`, which projects 3D objects to screen space and dispatches real pointer events. Speech is stubbed so voice lines finish instantly. To use Playwright's bundled Chromium instead of Chrome, remove `channel: 'chrome'` from `playwright.config.ts` and run `npx playwright install chromium`.
+
+### Offline (PWA)
+
+Production builds include a service worker (`vite-plugin-pwa`, `sw.js`) and a web app manifest. The app shell (HTML, JS, CSS, icons, manifest, privacy page) is precached. Models and recorded audio are cached the first time they load. On a first visit the game waits up to 4 s for the worker to take control before loading models, so every model is downloaded once and kept. After one full online visit, both languages play in airplane mode. Icons are drawn by `npm run icons` (`scripts/make-icons.mjs`, no dependencies).
 
 Dev-only tools (stripped from production builds):
 
@@ -20,7 +39,7 @@ Dev-only tools (stripped from production builds):
 
 ## Deploy to a subpath
 
-All URLs are relative (`base: './'`), so `dist/` works under any path, e.g. `https://example.com/play/`. Copy `dist/` to the server folder; no server config is needed.
+All URLs are relative (`base: './'`), so `dist/` works under any path, e.g. `https://example.com/play/`. Copy `dist/` to the server folder; no server config is needed. Serve over HTTPS (or localhost) so the service worker can install, and don't cache `sw.js` for long, so updates arrive promptly.
 
 ## What's in the game
 

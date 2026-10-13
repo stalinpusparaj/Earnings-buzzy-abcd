@@ -6,6 +6,7 @@ import { modelIdsFor } from './core/content';
 import { Input } from './core/input';
 import { Loop } from './core/loop';
 import { pickQuality } from './core/quality';
+import { enableOffline } from './core/offline';
 import { createRenderContext } from './core/renderer';
 import { loadSave } from './core/storage';
 import { tweens } from './core/tween';
@@ -61,6 +62,7 @@ async function boot(): Promise<void> {
   if (import.meta.env.DEV && devTool === 'perf') (await import('./dev/perfOverlay')).mountPerfOverlay(overlay, rc.renderer, loop);
 
   try {
+    await enableOffline();
     await preload([...SHARED_MODELS, ...modelIdsFor(save.lang)], (done, total) => start.progress((done / total) * 0.9));
     await Promise.all([garden.loadModels(), buzzy.load(), garden.setLanguage(save.lang, new Set(save.bloomed))]);
   } catch (err) {
@@ -81,7 +83,8 @@ async function boot(): Promise<void> {
   });
   hud.setMuted(save.volume === 0);
   game = new Game({ rc, loop, input, rig, garden, stage, buzzy, particles, audio, voice, hud, quality, save, overlay });
-  if (import.meta.env.DEV) Object.assign(window, { __buzzy: { game, rig, camera: rc.camera, tweens, garden } });
+  // Test hook for dev builds and the e2e build only; compiled out of production.
+  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') Object.assign(window, { __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage } });
 
   await start.waitForTap();
   audio.unlock();
