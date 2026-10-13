@@ -82,7 +82,13 @@ async function boot(): Promise<void> {
   const loop = new Loop(rc.renderer, () => rc.renderer.render(rc.scene, rc.camera));
   loop.add((dt) => tweens.update(dt));
   loop.start();
-  if (import.meta.env.DEV && devTool === 'perf') (await import('./dev/perfOverlay')).mountPerfOverlay(overlay, rc.renderer, loop, () => `tier ${governor.tier} dpr ${rc.renderer.getPixelRatio()}`);
+  // Dev and QA (e2e-mode) builds: /?dev=perf overlay with fps, draw calls, tier and load time.
+  const qaBuild = import.meta.env.DEV || import.meta.env.MODE === 'e2e';
+  let readyMs = 0;
+  if (qaBuild && devTool === 'perf') {
+    const status = () => `tier ${governor.tier} dpr ${rc.renderer.getPixelRatio()}\nready ${readyMs ? `${(readyMs / 1000).toFixed(1)} s` : '…'}`;
+    (await import('./dev/perfOverlay')).mountPerfOverlay(overlay, rc.renderer, loop, status);
+  }
 
   try {
     await enableOffline();
@@ -119,6 +125,9 @@ async function boot(): Promise<void> {
       },
     });
 
+  // Time from navigation to the Play button (brief: garden playable in ≤ 5 s on Fast 4G).
+  readyMs = performance.now();
+  if (qaBuild) console.info(`[timing] ready to play in ${Math.round(readyMs)} ms`);
   await start.waitForTap();
   audio.unlock();
   void game.begin();

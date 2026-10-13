@@ -38,9 +38,11 @@ The tests drive the game through `tests/e2e/harness.js`, which projects 3D objec
 
 Production builds include a service worker (`vite-plugin-pwa`, `sw.js`) and a web app manifest. The app shell (HTML, JS, CSS, icons, manifest, privacy page) is precached. Models and recorded audio are cached the first time they load. On a first visit the game waits up to 4 s for the worker to take control before loading models, so every model is downloaded once and kept. After one full online visit, both languages play in airplane mode. Icons are drawn by `npm run icons` (`scripts/make-icons.mjs`, no dependencies).
 
-Dev-only tools (stripped from production builds):
+Testing on phones and tablets: `npm run qa` builds the QA version and serves it to your Wi-Fi network. Then work through [docs/QA_CHECKLIST.md](docs/QA_CHECKLIST.md).
 
-- `/?dev=perf`: fps, draw calls, triangles, GPU memory
+Dev-only tools (stripped from production builds; also in the QA build):
+
+- `/?dev=perf`: fps, draw calls, triangles, GPU memory, quality tier and pixel ratio, and `ready` (seconds until the Play button appears)
 - `/?dev=models`: Model Gallery. All 18 GLBs in a grid with the game's toon shading; add `&spin=0` to freeze. Use it after `npm run optimize-assets`.
 - `/?dev=glyphs`: Glyph Sheet. Every letter drawn exactly as the game draws it (bubble, badge, 3D-letter face, tracing board). Use it for the Tamil review. Also available in the e2e build.
 - `/?dev=strokes`: Stroke Editor. Pick a letter, click to place points, Enter ends a stroke, Export copies the JSON for `src/data/strokes/{lang}/{id}.json`.

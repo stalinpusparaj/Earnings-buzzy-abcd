@@ -52,3 +52,12 @@ test('the web app manifest and icons are served', async ({ page, request }) => {
     expect(img.ok(), icon.src).toBe(true);
   }
 });
+
+test('the QA build shows the perf overlay with tier and load time', async ({ page }) => {
+  await page.goto('./?dev=perf');
+  await page.getByRole('button', { name: 'Play' }).waitFor({ state: 'visible', timeout: 90_000 });
+  const perf = page.locator('#perf');
+  await expect(perf).toContainText(/fps \d+/);
+  await expect(perf).toContainText(/tier (high|mid|low) dpr [\d.]+/);
+  await expect(perf).toContainText(/ready \d+\.\d s/);
+});
