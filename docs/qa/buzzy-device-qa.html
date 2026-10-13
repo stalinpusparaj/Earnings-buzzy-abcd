@@ -1,0 +1,1045 @@
+<title>Buzzy Device QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a field clipboard. Sticky device tabs, one column of section cards, the results matrix in its own tab. */
+:root {
+  --bg: #F2F7FA;
+  --surface: #FFFFFF;
+  --surface-2: #E7F0F6;
+  --fg: #2A211B;
+  --muted: #62554B;
+  --line: #D2E0E9;
+  --accent: #FFD23F;
+  --accent-ink: #2A211B;
+  --pass: #237A3B;
+  --pass-bg: #E1F3E5;
+  --fail: #B8352E;
+  --fail-bg: #FBE6E4;
+  --na: #5F6570;
+  --na-bg: #E9ECEF;
+  --warn: #8A5800;
+  --warn-bg: #FFF1CC;
+  --focus: #1C6FD1;
+  --font-display: "Baloo 2", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16120F; --surface: #211B16; --surface-2: #2A231D; --fg: #F3ECE3; --muted: #BBAD9F; --line: #3B322A;
+    --accent: #FFD23F; --accent-ink: #231C16; --pass: #6CD188; --pass-bg: #1E3324; --fail: #FF8A80; --fail-bg: #3D2220;
+    --na: #A7ADB5; --na-bg: #2C2C2E; --warn: #F1BE5A; --warn-bg: #3A2E14; --focus: #6AA8FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16120F; --surface: #211B16; --surface-2: #2A231D; --fg: #F3ECE3; --muted: #BBAD9F; --line: #3B322A;
+  --accent: #FFD23F; --accent-ink: #231C16; --pass: #6CD188; --pass-bg: #1E3324; --fail: #FF8A80; --fail-bg: #3D2220;
+  --na: #A7ADB5; --na-bg: #2C2C2E; --warn: #F1BE5A; --warn-bg: #3A2E14; --focus: #6AA8FF;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+[hidden] { display: none !important; }
+.brand > div, .panel > *, .head > * { min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: 2rem; font-weight: 800; }
+h2 { font-size: 1.35rem; font-weight: 800; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Header */
+.head { display: flex; gap: 12px 16px; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
+.head .sub { color: var(--muted); font-size: 0.95rem; }
+.brand { display: flex; gap: 12px; align-items: center; }
+.bee { width: 44px; height: 38px; flex: none; border-radius: 50%; border: 3px solid var(--accent-ink);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 11px, var(--accent-ink) 11px 17px); }
+.sync { font-size: 0.85rem; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.sync[data-state="saved"] { background: var(--pass-bg); color: var(--pass); }
+.sync[data-state="saving"] { background: var(--warn-bg); color: var(--warn); }
+.sync[data-state="error"], .sync[data-state="local"] { background: var(--fail-bg); color: var(--fail); }
+.banner { padding: 10px 14px; border-radius: 10px; background: var(--warn-bg); color: var(--fg); font-size: 0.95rem; }
+
+/* Tabs */
+.tabbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; display: grid; gap: 1px; text-align: left; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; min-height: 48px; }
+.tab .t-name { font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; line-height: 1.1; }
+.tab .t-meta { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab .t-fail { color: var(--fail); font-weight: 700; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tab[aria-selected="true"] .t-meta { color: var(--accent-ink); }
+
+/* Setup */
+details.setup { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; }
+details.setup > summary { cursor: pointer; padding-block: 10px; font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+.setup-body { display: grid; gap: 12px; padding-bottom: 14px; }
+.setup-body ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
+.cmd { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cmd pre { margin: 0; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; overflow-x: auto; min-width: 0; flex: 1 1 260px; font-family: var(--font-mono); font-size: 0.85rem; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; cursor: pointer; min-height: 40px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn.danger { color: var(--fail); border-color: currentColor; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 0.88rem; }
+.legend b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; }
+
+/* Device panel */
+.panel { display: grid; gap: 16px; }
+.panel-head { display: flex; gap: 10px 16px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.panel-head .hint { color: var(--muted); }
+.progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; display: flex; }
+.progress span { display: block; height: 100%; }
+.progress .p-pass { background: var(--pass); }
+.progress .p-fail { background: var(--fail); }
+.progress .p-na { background: var(--na); opacity: 0.6; }
+.info { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.lbl { display: grid; gap: 3px; font-size: 0.85rem; color: var(--muted); min-width: 0; }
+.lbl input, .lbl select { color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; min-height: 40px; width: 100%; }
+
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.section > summary { list-style: none; cursor: pointer; display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 16px; }
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary::after { content: "▾"; color: var(--muted); transition: transform 0.15s; }
+.section:not([open]) > summary::after { transform: rotate(-90deg); }
+.s-title { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.s-num { font-family: var(--font-mono); color: var(--muted); font-size: 0.9rem; }
+.s-count { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; white-space: nowrap; }
+.s-count .bad { color: var(--fail); font-weight: 700; }
+.items { border-top: 1px solid var(--line); }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item[data-v="pass"] { background: color-mix(in srgb, var(--pass-bg) 55%, transparent); }
+.item[data-v="fail"] { background: color-mix(in srgb, var(--fail-bg) 70%, transparent); }
+.item[data-v="na"] .i-text { color: var(--muted); }
+.i-text { min-width: 0; }
+.i-fields { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.field { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 8px; padding: 4px 8px; font-size: 0.85rem; color: var(--muted); }
+.field input, .field select { width: 5.5em; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 6px; font-family: var(--font-mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; min-height: 34px; }
+.field input.wide { width: 9em; }
+.field .target { font-size: 0.78rem; }
+.field[data-off="true"] { background: var(--fail-bg); color: var(--fail); }
+.field[data-ok="true"] { background: var(--pass-bg); color: var(--pass); }
+.verdict { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; align-self: start; }
+.verdict button { border: 0; background: var(--surface); padding: 0 12px; min-height: 40px; min-width: 52px; cursor: pointer; font-size: 0.88rem; color: var(--muted); }
+.verdict button + button { border-left: 1px solid var(--line); }
+.verdict button[aria-pressed="true"][data-v="pass"] { background: var(--pass); color: var(--surface); font-weight: 700; }
+.verdict button[aria-pressed="true"][data-v="fail"] { background: var(--fail); color: var(--surface); font-weight: 700; }
+.verdict button[aria-pressed="true"][data-v="na"] { background: var(--na); color: var(--surface); font-weight: 700; }
+.i-note { grid-column: 1 / -1; display: grid; gap: 4px; }
+.i-note textarea { width: 100%; min-height: 64px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); }
+.note-toggle { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; justify-self: start; grid-column: 1 / -1; }
+.panel-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 0.9rem; }
+
+/* Results */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.stat .v { font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .k { color: var(--muted); font-size: 0.85rem; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.03em; text-transform: uppercase; background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .off { color: var(--fail); font-weight: 700; }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+.chip.pass { background: var(--pass-bg); color: var(--pass); }
+.chip.fail { background: var(--fail-bg); color: var(--fail); }
+.chip.na { background: var(--na-bg); color: var(--na); }
+.chip.open { background: var(--warn-bg); color: var(--warn); }
+.chip.dev { background: var(--surface-2); color: var(--fg); font-weight: 500; }
+.empty { color: var(--muted); }
+
+form.bug { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+form.bug textarea, form.bug input[type="text"], form.bug select { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface); color: var(--fg); min-height: 40px; }
+form.bug textarea { min-height: 70px; resize: vertical; }
+.sev { display: flex; flex-wrap: wrap; gap: 8px; }
+.sev label { display: inline-flex; gap: 6px; align-items: center; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+.sev label:has(input:checked) { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.form-msg { font-size: 0.9rem; min-height: 1.3em; }
+.form-msg.err { color: var(--fail); }
+.form-msg.ok { color: var(--pass); }
+.bugs { display: grid; gap: 10px; }
+.bugcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; }
+.bugcard[data-status="fixed"] { opacity: 0.7; }
+.bugcard .b-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.bugcard .b-title { font-weight: 700; flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.bugcard pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 0.82rem; background: var(--surface-2); padding: 8px; border-radius: 8px; }
+.bugcard dl { margin: 0; display: grid; gap: 6px; }
+.bugcard dt { font-size: 0.8rem; color: var(--muted); }
+.bugcard dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.b-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.known { margin: 0; padding-left: 1.2em; color: var(--muted); display: grid; gap: 4px; }
+@media (max-width: 520px) {
+  .item { grid-template-columns: minmax(0, 1fr); }
+  .verdict { justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) { .section > summary::after { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="brand">
+      <span class="bee" aria-hidden="true"></span>
+      <div>
+        <h1>Buzzy Device QA</h1>
+        <p class="sub">Phase 7 device matrix for Buzzy ABC Garden. Open the QA build with <code>?dev=perf</code> on each device and record what the overlay shows.</p>
+      </div>
+    </div>
+    <span class="sync" id="sync" data-state="connecting" role="status">Connecting…</span>
+  </header>
+  <p class="banner" id="banner" hidden></p>
+
+  <details class="setup" id="setup">
+    <summary>Setup: getting the QA build onto a device</summary>
+    <div class="setup-body">
+      <ol>
+        <li>On the Mac, start the QA build. Vite prints a <b>Network</b> address such as <code>http://192.168.1.20:4174/</code>.
+          <div class="cmd"><pre id="cmd-qa">cd ~/Documents/buzzy-abc-garden &amp;&amp; npm run qa</pre><button class="btn" type="button" data-copy="cmd-qa">Copy</button></div>
+        </li>
+        <li>On the device (same Wi-Fi), open that address with <code>?dev=perf</code> on the end.</li>
+        <li>Offline and install (section 9) need HTTPS: upload <code>dist-e2e/</code> to a static HTTPS host and test from there.</li>
+        <li>Before each device, clear the site's data so it behaves like a new child's. iOS: Settings → Safari → Advanced → Website Data. Android Chrome: site settings → Clear &amp; reset.</li>
+        <li>Console lines (<code>[quality]</code>, <code>[timing]</code>, errors): iPhone/iPad via Mac Safari → Develop → device; Android via <code>chrome://inspect</code> with USB debugging.</li>
+      </ol>
+      <div class="legend" aria-label="Perf overlay readouts">
+        <span><b>fps</b> frames per second</span><span><b>calls</b> draw calls (garden ≤ 80)</span><span><b>geo / tex</b> GPU objects</span><span><b>tier / dpr</b> quality tier, pixel ratio</span><span><b>ready</b> seconds to the Play button</span>
+      </div>
+    </div>
+  </details>
+
+  <div class="tabbar">
+    <div class="tabs" role="tablist" id="tabs" aria-label="Devices and results"></div>
+  </div>
+
+  <main id="panels"></main>
+</div>
+
+<script>
+(() => {
+  // ---------- Checklist content (mirrors docs/QA_CHECKLIST.md in the repo) ----------
+  const DEVICES = [
+    { id: 'android', name: 'Android', hint: 'Low-end phone, 2–3 GB RAM, Chrome' },
+    { id: 'iphone', name: 'iPhone', hint: 'Safari' },
+    { id: 'ipad', name: 'iPad', hint: 'Safari' },
+    { id: 'desktop', name: 'Desktop', hint: 'Chrome with DevTools throttling: Fast 4G' },
+  ];
+  const fps = { text: '≥ 30', ok: (n) => n >= 30 };
+  const SECTIONS = [
+    { id: 'load', title: 'Load and start', items: [
+      { id: 'load-bar', text: 'The loading bar moves; no error state (pink bar).' },
+      { id: 'ready', text: 'First visit with site data cleared: read <code>ready</code> in the overlay. Phones on mobile data with Wi-Fi off; desktop with DevTools Disable cache + Fast 4G.',
+        fields: [{ id: 'ready', label: 'ready', unit: 's', target: { text: '≤ 5.0 s', ok: (n) => n <= 5 } }] },
+      { id: 'portrait', text: 'Portrait shows only the rotating-phone animation; landscape shows the game.' },
+      { id: 'music', text: 'Tap Play: music starts within a second.' },
+      { id: 'silent', only: ['iphone', 'ipad'], text: 'Silent switch ON: music, sound effects and Buzzy\'s voice still play. The HUD mute silences them, and other apps\' audio is normal after leaving the game.',
+        fields: [{ id: 'iosVersion', label: 'iOS', kind: 'text', placeholder: '17.5' }] },
+      { id: 'welcome', text: 'Buzzy flies in, says the welcome line, then "Pick a flower!". Is there an English voice?' },
+      { id: 'tier-start', text: 'Starting tier and pixel ratio; note any <code>[quality] boot probe</code> line.',
+        fields: [{ id: 'tierStart', label: 'tier', kind: 'select', options: ['high', 'mid', 'low'] }, { id: 'dprStart', label: 'dpr' }] },
+    ]},
+    { id: 'perf', title: 'Performance', items: [
+      { id: 'garden-fps', text: 'Garden idle: fps (≥ 30 on low tier, 60 on mid-range) and draw calls.',
+        fields: [{ id: 'fpsGarden', label: 'fps', target: fps }, { id: 'calls', label: 'calls', target: { text: '≤ 80', ok: (n) => n <= 80 } }] },
+      { id: 'game-fps', text: 'Mini-game fps.',
+        fields: [{ id: 'fpsPop', label: 'Pop', target: fps }, { id: 'fpsTrace', label: 'Trace', target: fps }, { id: 'fpsBasket', label: 'Basket', target: fps }] },
+      { id: 'tap-instant', text: 'Taps feel instant: buds squash, bubbles pop and buttons bounce within about 0.1 s.' },
+      { id: 'leak', text: 'Leak check: <code>geo</code>/<code>tex</code> in the garden, then again after 5 letters (leave some early with Home). They should be about the same.',
+        fields: [{ id: 'leakStart', label: 'start', kind: 'text', placeholder: '42 / 31', wide: true }, { id: 'leakEnd', label: 'after', kind: 'text', placeholder: '42 / 31', wide: true }] },
+      { id: 'tier-15', text: 'After 15 minutes: tier, any <code>[quality] sustained slow frames</code> lines, and how warm the device got.',
+        fields: [{ id: 'tierEnd', label: 'tier', kind: 'select', options: ['high', 'mid', 'low'] }] },
+    ]},
+    { id: 'touch', title: 'Touch and input', items: [
+      { id: 'targets', text: 'Every target is easy for a small finger: HUD buttons, buds, bubbles, basket objects.' },
+      { id: 'no-scroll', text: 'No page scrolling, pinch-zoom, text selection or long-press menu in the child area.' },
+      { id: 'trace-drag', text: 'Trace: smooth drag; Buzzy follows only while the finger is on the path; lifting and restarting continues the stroke.' },
+      { id: 'basket-drag', text: 'Basket: the object follows the finger, drops into the basket, and glides back when dropped elsewhere.' },
+      { id: 'second-finger', text: 'A second finger mid-drag doesn\'t break or jump the drag.' },
+      { id: 'notch', only: ['iphone'], text: 'Landscape: no HUD button hides under the notch or home indicator.' },
+    ]},
+    { id: 'letters', title: 'Letter loop (English)', items: [
+      { id: 'a-pop', text: '<b>A, Pollen Pop:</b> a wrong bubble wobbles and boops; after 2 misses or 6 s idle the right bubbles pulse and Buzzy points; 3 pops bloom the flower.' },
+      { id: 'b-trace', text: '<b>B, Trace:</b> tapping a stroke\'s end does nothing; off the path pauses; all strokes in order bloom the flower.' },
+      { id: 'c-basket', text: '<b>C, Basket:</b> a wrong object bounces back and is named; after 2 misses the right one glows; 2 rounds bloom the flower.' },
+      { id: 'bloom-stays', text: 'The bloom stays in the garden and the next bud pulses.' },
+      { id: 'home', text: 'Home mid-game returns to the garden with no penalty; the same bud plays again.' },
+      { id: 'intro-skip', text: 'The intro can be skipped with a tap, only on the second visit to a letter.' },
+      { id: 'gazebo', text: 'Gazebo: the sing-along visits every bud in order; Home exits it.' },
+    ]},
+    { id: 'tamil', title: 'Tamil', items: [
+      { id: 'ta-glyphs', text: 'The A/அ button switches; the buds show அ ஆ இ ஈ உ ஊ. Compare with <code>?dev=glyphs</code> on the same device.' },
+      { id: 'ta-voice', text: 'Tamil voice present? If not, a chime plays and play continues.',
+        fields: [{ id: 'taVoice', label: 'Tamil', kind: 'select', options: ['voice', 'chime'] }] },
+      { id: 'ta-play', text: 'Play one of each: அ (Pollen Pop), ஆ (Trace, placeholder paths), இ (Basket).' },
+      { id: 'ta-progress', text: 'Tamil progress is kept separately from English.' },
+    ]},
+    { id: 'audio', title: 'Audio lifecycle', items: [
+      { id: 'mute', text: 'The mute button silences music, effects and voice, and stays muted after a reload.' },
+      { id: 'duck', text: 'Music gets quieter while Buzzy talks.' },
+      { id: 'background', text: 'Switch apps or lock the screen for 30 s, then return: game and music resume. Older iOS (< 16.4): no Now Playing controls stay on the lock screen.' },
+      { id: 'interrupt', text: 'Optional: an incoming call or another app\'s audio, then return.' },
+    ]},
+    { id: 'grownups', title: 'Grown-ups area', items: [
+      { id: 'short-tap', text: 'A short tap on the grown-ups button plays "Grown-ups only!" and opens nothing.' },
+      { id: 'hold', text: 'A 3 s hold fills the ring and shows the number challenge; 3 wrong answers close it.' },
+      { id: 'settings', text: 'The right answer opens readable settings; language, tracing difficulty and volume apply; Reset progress (after confirming) clears the blooms.' },
+      { id: 'privacy', text: 'The privacy page opens and is readable.' },
+    ]},
+    { id: 'comfort', title: 'Comfort and accessibility', items: [
+      { id: 'reduce-motion', text: 'Reduce Motion on (iOS: Accessibility → Motion; Android: Remove animations), then reload: fewer particles, shorter camera moves, no pulsing Play button.' },
+      { id: 'gentle-stop', text: 'Gentle stop: after 6 letters (or 15 minutes) Buzzy yawns and says the sleepy line; play continues and nothing starts by itself.' },
+    ]},
+    { id: 'offline', title: 'Offline and install (HTTPS only)', items: [
+      { id: 'airplane', text: 'After one full visit (play a letter, switch language once): airplane mode, close the tab, reopen. Loads to Play and plays a letter in both languages.' },
+      { id: 'install', text: 'Install (iOS: Share → Add to Home Screen; Android/desktop: Install app). Buzzy icon, opens full-screen landscape, plays offline.' },
+      { id: 'update', text: 'After a new deploy, the installed app picks up the new version on its next launch.' },
+    ]},
+    { id: 'long', title: 'Long session and recovery', items: [
+      { id: 'fifteen', text: '15 minutes of mixed play without a crash, freeze or black screen.' },
+      { id: 'bg-five', text: 'Background for 5+ minutes; on return the garden still draws (a black screen means a lost GPU context: file it).' },
+      { id: 'rotate-mid', text: 'Rotate to portrait and back during a mini-game; the game state is intact.' },
+    ]},
+  ];
+  const KNOWN = [
+    'The ஆ and உ tracing paths are placeholders, waiting to be redrawn in /?dev=strokes.',
+    'Voice is the device\'s text-to-speech until recorded voice-over exists; Tamil may fall back to a chime.',
+    'The sing-along uses spoken lines; there is no song yet.',
+    'The grown-ups area and privacy page are English only.',
+    'A small darker wedge at the fly\'s left wing root (from mesh simplification).',
+  ];
+  const SEVERITY = [['blocks', 'Blocks play'], ['annoying', 'Annoying'], ['cosmetic', 'Cosmetic']];
+
+  const applies = (item, dev) => !item.only || item.only.includes(dev);
+  const allItems = (dev) => SECTIONS.flatMap((s) => s.items.filter((i) => applies(i, dev)));
+  const allFields = SECTIONS.flatMap((s) => s.items.flatMap((i) => i.fields || []));
+  const fieldById = Object.fromEntries(allFields.map((f) => [f.id, f]));
+
+  // ---------- State ----------
+  // Device results live in db docs devices/<id>: { checks:{item:'pass'|'fail'|'na'|null}, values:{field:string}, notes:{item:string} }.
+  // Bugs live in bugs/<auto id>.
+  const server = {};
+  const pending = {};
+  const exists = {};
+  let bugs = [];
+  let db = null;
+  let devicesLoaded = false;
+  let mode = 'connecting'; // connecting | synced | local | readonly
+  let canWrite = true;
+  const LOCAL_KEY = 'buzzy-device-qa:v1';
+
+  function merge(a, b) {
+    const out = Object.assign({}, a);
+    for (const [k, v] of Object.entries(b || {})) {
+      out[k] = v && typeof v === 'object' && !Array.isArray(v) && out[k] && typeof out[k] === 'object' ? merge(out[k], v) : v;
+    }
+    return out;
+  }
+  const view = (dev) => merge(server[dev] || {}, pending[dev] || {});
+
+  function readLocal() {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      Object.assign(server, saved.devices || {});
+      bugs = Array.isArray(saved.bugs) ? saved.bugs : [];
+    } catch (e) { /* storage blocked: start empty */ }
+  }
+  function writeLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ devices: server, bugs })); } catch (e) { /* ignore */ }
+  }
+
+  // ---------- Sync status ----------
+  const syncEl = document.getElementById('sync');
+  const bannerEl = document.getElementById('banner');
+  function setSync(state, text) {
+    syncEl.dataset.state = state;
+    syncEl.textContent = text;
+  }
+  function banner(text) {
+    bannerEl.hidden = !text;
+    bannerEl.textContent = text || '';
+  }
+
+  // ---------- Writes: coalesced, one at a time per device doc ----------
+  const timers = {};
+  const inflight = {};
+  function queue(dev, patch) {
+    if (!canWrite) return;
+    pending[dev] = merge(pending[dev] || {}, patch);
+    refreshDevice(dev);
+    refreshTabs();
+    if (mode === 'local') {
+      server[dev] = view(dev);
+      delete pending[dev];
+      writeLocal();
+      return;
+    }
+    clearTimeout(timers[dev]);
+    timers[dev] = setTimeout(() => flush(dev), 600);
+  }
+  async function flush(dev) {
+    if (!pending[dev]) return;
+    if (!db || !devicesLoaded || inflight[dev]) { timers[dev] = setTimeout(() => flush(dev), 400); return; }
+    const patch = pending[dev];
+    delete pending[dev];
+    inflight[dev] = true;
+    setSync('saving', 'Saving…');
+    const ref = db.doc('devices/' + dev);
+    try {
+      if (exists[dev]) {
+        try { await ref.update(patch); }
+        catch (e) {
+          if (e && e.code === 'invalid_argument') { await ref.set(merge(server[dev] || {}, patch)); }
+          else throw e;
+        }
+      } else {
+        await ref.set(merge({ checks: {}, values: {}, notes: {} }, merge(server[dev] || {}, patch)));
+        exists[dev] = true;
+      }
+      setSync('saved', 'Saved');
+    } catch (e) {
+      pending[dev] = merge(patch, pending[dev] || {});
+      const code = (e && e.code) || 'unavailable';
+      if (code === 'invalid_argument') {
+        canWrite = false;
+        setSync('error', 'View only');
+        banner('You can see these results but not change them. Ask the owner for Contributor access to record results.');
+        renderAll();
+      } else if (code === 'unavailable' || code === 'resource_exhausted') {
+        setSync('error', 'Retrying…');
+        timers[dev] = setTimeout(() => flush(dev), 2000 + Math.random() * 1000);
+      } else {
+        setSync('error', 'Not saved (' + code + ')');
+      }
+    } finally {
+      inflight[dev] = false;
+    }
+  }
+
+  // ---------- Tabs ----------
+  const TABS = [...DEVICES.map((d) => ({ id: d.id, name: d.name })), { id: 'results', name: 'Results & bugs' }];
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+  let active = 'android';
+  try {
+    const hash = location.hash.replace('#', '');
+    const saved = localStorage.getItem(LOCAL_KEY + ':tab');
+    if (TABS.some((t) => t.id === hash)) active = hash;
+    else if (TABS.some((t) => t.id === saved)) active = saved;
+  } catch (e) { /* default tab */ }
+
+  const tabEls = {};
+  const panelEls = {};
+  for (const t of TABS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab';
+    b.id = 'tab-' + t.id;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-controls', 'panel-' + t.id);
+    b.innerHTML = '<span class="t-name"></span><span class="t-meta"></span>';
+    b.querySelector('.t-name').textContent = t.name;
+    b.addEventListener('click', () => select(t.id));
+    tabsEl.appendChild(b);
+    tabEls[t.id] = b;
+  }
+  function select(id) {
+    active = id;
+    for (const t of TABS) {
+      tabEls[t.id].setAttribute('aria-selected', String(t.id === id));
+      if (panelEls[t.id]) panelEls[t.id].hidden = t.id !== id;
+    }
+    try { localStorage.setItem(LOCAL_KEY + ':tab', id); } catch (e) { /* ignore */ }
+    try { if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id); } catch (e) { /* frame may refuse */ }
+  }
+
+  function counts(dev) {
+    const checks = view(dev).checks || {};
+    const items = allItems(dev);
+    let pass = 0, fail = 0, na = 0;
+    for (const i of items) {
+      const v = checks[i.id];
+      if (v === 'pass') pass++;
+      else if (v === 'fail') fail++;
+      else if (v === 'na') na++;
+    }
+    return { pass, fail, na, total: items.length, done: pass + fail + na };
+  }
+  function refreshTabs() {
+    for (const d of DEVICES) {
+      const c = counts(d.id);
+      const meta = tabEls[d.id].querySelector('.t-meta');
+      meta.textContent = c.done + '/' + c.total;
+      if (c.fail) {
+        const f = document.createElement('span');
+        f.className = 't-fail';
+        f.textContent = ' · ' + c.fail + ' fail';
+        meta.appendChild(f);
+      }
+    }
+    const open = bugs.filter((b) => b.status !== 'fixed').length;
+    tabEls.results.querySelector('.t-meta').textContent = open ? open + ' open bug' + (open === 1 ? '' : 's') : 'no open bugs';
+  }
+
+  // ---------- Device panels ----------
+  const refs = {};
+  function numberOf(v) {
+    const n = parseFloat(String(v || '').replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+  function makeField(dev, f) {
+    const wrap = document.createElement('label');
+    wrap.className = 'field';
+    const name = document.createElement('span');
+    name.textContent = f.label;
+    wrap.appendChild(name);
+    let input;
+    if (f.kind === 'select') {
+      input = document.createElement('select');
+      input.innerHTML = '<option value="">–</option>';
+      for (const o of f.options) input.add(new Option(o, o));
+      input.addEventListener('change', () => queue(dev, { values: { [f.id]: input.value } }));
+    } else {
+      input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = f.kind === 'text' ? 'text' : 'decimal';
+      input.autocomplete = 'off';
+      if (f.placeholder) input.placeholder = f.placeholder;
+      if (f.wide) input.className = 'wide';
+      input.addEventListener('input', () => queue(dev, { values: { [f.id]: input.value } }));
+    }
+    input.id = dev + '-v-' + f.id;
+    wrap.appendChild(input);
+    if (f.unit) {
+      const u = document.createElement('span');
+      u.textContent = f.unit;
+      wrap.appendChild(u);
+    }
+    if (f.target) {
+      const t = document.createElement('span');
+      t.className = 'target';
+      t.textContent = 'target ' + f.target.text;
+      wrap.appendChild(t);
+    }
+    return { wrap, input, f };
+  }
+
+  function buildDevice(d) {
+    const panel = document.createElement('section');
+    panel.className = 'panel';
+    panel.id = 'panel-' + d.id;
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', 'tab-' + d.id);
+    const r = (refs[d.id] = { items: {}, sections: {}, info: {} });
+
+    const head = document.createElement('div');
+    head.className = 'panel-head';
+    head.innerHTML = '<h2></h2><span class="hint"></span>';
+    head.querySelector('h2').textContent = d.name;
+    head.querySelector('.hint').textContent = d.hint;
+    panel.appendChild(head);
+    const bar = document.createElement('div');
+    bar.className = 'progress';
+    bar.setAttribute('role', 'img');
+    bar.innerHTML = '<span class="p-pass"></span><span class="p-fail"></span><span class="p-na"></span>';
+    panel.appendChild(bar);
+    r.bar = bar;
+
+    const info = document.createElement('div');
+    info.className = 'info';
+    for (const [id, label, ph] of [['model', 'Device model', 'e.g. Redmi 9A'], ['os', 'OS and browser', 'e.g. Android 12, Chrome 155'], ['ram', 'RAM', 'e.g. 2 GB']]) {
+      const l = document.createElement('label');
+      l.className = 'lbl';
+      l.textContent = label;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = d.id + '-info-' + id;
+      inp.placeholder = ph;
+      inp.autocomplete = 'off';
+      inp.addEventListener('input', () => queue(d.id, { values: { [id]: inp.value } }));
+      l.appendChild(inp);
+      info.appendChild(l);
+      r.info[id] = inp;
+    }
+    panel.appendChild(info);
+
+    SECTIONS.forEach((s, si) => {
+      const items = s.items.filter((i) => applies(i, d.id));
+      if (!items.length) return;
+      const det = document.createElement('details');
+      det.className = 'section';
+      det.open = true;
+      det.id = d.id + '-sec-' + s.id;
+      const sum = document.createElement('summary');
+      sum.innerHTML = '<span class="s-title"><span class="s-num"></span><h3></h3></span><span class="s-count"></span>';
+      sum.querySelector('.s-num').textContent = String(si + 1);
+      sum.querySelector('h3').textContent = s.title;
+      det.appendChild(sum);
+      const list = document.createElement('div');
+      list.className = 'items';
+      for (const it of items) {
+        const row = document.createElement('div');
+        row.className = 'item';
+        const text = document.createElement('div');
+        text.className = 'i-text';
+        text.innerHTML = it.text; // static checklist copy written into this page
+        row.appendChild(text);
+        const verdict = document.createElement('div');
+        verdict.className = 'verdict';
+        verdict.setAttribute('role', 'group');
+        verdict.setAttribute('aria-label', 'Result');
+        const buttons = {};
+        for (const [v, label] of [['pass', 'Pass'], ['fail', 'Fail'], ['na', 'N/A']]) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.dataset.v = v;
+          b.textContent = label;
+          b.setAttribute('aria-pressed', 'false');
+          b.addEventListener('click', () => {
+            const cur = (view(d.id).checks || {})[it.id];
+            const next = cur === v ? null : v;
+            queue(d.id, { checks: { [it.id]: next } });
+            if (next === 'fail') { refs[d.id].items[it.id].noteWrap.hidden = false; refs[d.id].items[it.id].note.focus(); }
+          });
+          verdict.appendChild(b);
+          buttons[v] = b;
+        }
+        row.appendChild(verdict);
+        const fields = [];
+        if (it.fields) {
+          const fw = document.createElement('div');
+          fw.className = 'i-fields';
+          for (const f of it.fields) {
+            const fld = makeField(d.id, f);
+            fw.appendChild(fld.wrap);
+            fields.push(fld);
+          }
+          row.appendChild(fw);
+        }
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'note-toggle';
+        toggle.textContent = 'Add a note';
+        const noteWrap = document.createElement('label');
+        noteWrap.className = 'i-note';
+        noteWrap.hidden = true;
+        const note = document.createElement('textarea');
+        note.id = d.id + '-note-' + it.id;
+        note.placeholder = 'What happened? Steps, overlay numbers, console lines…';
+        note.addEventListener('input', () => queue(d.id, { notes: { [it.id]: note.value } }));
+        noteWrap.appendChild(note);
+        toggle.addEventListener('click', () => { noteWrap.hidden = false; toggle.hidden = true; note.focus(); });
+        row.append(toggle, noteWrap);
+        list.appendChild(row);
+        r.items[it.id] = { row, buttons, fields, note, noteWrap, toggle };
+      }
+      det.appendChild(list);
+      panel.appendChild(det);
+      r.sections[s.id] = { det, count: sum.querySelector('.s-count'), items };
+    });
+
+    const foot = document.createElement('div');
+    foot.className = 'panel-foot';
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'btn danger';
+    clear.textContent = 'Clear ' + d.name + ' results';
+    const confirmWrap = document.createElement('span');
+    confirmWrap.hidden = true;
+    confirmWrap.innerHTML = 'Clear every tick, number and note for this device? <button type="button" class="btn danger" data-a="yes">Clear</button> <button type="button" class="btn" data-a="no">Keep</button>';
+    clear.addEventListener('click', () => { confirmWrap.hidden = false; clear.hidden = true; });
+    confirmWrap.querySelector('[data-a="no"]').addEventListener('click', () => { confirmWrap.hidden = true; clear.hidden = false; });
+    confirmWrap.querySelector('[data-a="yes"]').addEventListener('click', async () => {
+      confirmWrap.hidden = true;
+      clear.hidden = false;
+      clearTimeout(timers[d.id]);
+      delete pending[d.id];
+      const empty = { checks: {}, values: {}, notes: {} };
+      if (mode === 'local') { server[d.id] = empty; writeLocal(); renderAll(); return; }
+      if (!db || !canWrite) return;
+      try { setSync('saving', 'Saving…'); await db.doc('devices/' + d.id).set(empty); exists[d.id] = true; setSync('saved', 'Saved'); }
+      catch (e) { setSync('error', 'Not cleared (' + ((e && e.code) || 'error') + ')'); }
+    });
+    foot.append(clear, confirmWrap);
+    panel.appendChild(foot);
+    r.clear = clear;
+    return panel;
+  }
+
+  function setValue(el, value) {
+    const v = value == null ? '' : String(value);
+    if (document.activeElement !== el && el.value !== v) el.value = v;
+  }
+
+  function refreshDevice(dev) {
+    const r = refs[dev];
+    if (!r) return;
+    const st = view(dev);
+    const checks = st.checks || {};
+    const values = st.values || {};
+    const notes = st.notes || {};
+    for (const [id, inp] of Object.entries(r.info)) { setValue(inp, values[id]); inp.disabled = !canWrite; }
+    for (const [id, it] of Object.entries(r.items)) {
+      const v = checks[id] || '';
+      it.row.dataset.v = v;
+      for (const [bv, b] of Object.entries(it.buttons)) { b.setAttribute('aria-pressed', String(bv === v)); b.disabled = !canWrite; }
+      for (const fld of it.fields) {
+        setValue(fld.input, values[fld.f.id]);
+        fld.input.disabled = !canWrite;
+        const n = numberOf(values[fld.f.id]);
+        const hasTarget = !!fld.f.target && n !== null;
+        fld.wrap.dataset.off = String(hasTarget && !fld.f.target.ok(n));
+        fld.wrap.dataset.ok = String(hasTarget && fld.f.target.ok(n));
+      }
+      const note = notes[id] || '';
+      setValue(it.note, note);
+      it.note.disabled = !canWrite;
+      if (note || v === 'fail') { it.noteWrap.hidden = false; it.toggle.hidden = true; }
+      it.toggle.disabled = !canWrite;
+    }
+    for (const s of Object.values(r.sections)) {
+      let done = 0, fail = 0;
+      for (const i of s.items) { const v = checks[i.id]; if (v) done++; if (v === 'fail') fail++; }
+      s.count.innerHTML = '';
+      s.count.append(document.createTextNode(done + '/' + s.items.length));
+      if (fail) { const b = document.createElement('span'); b.className = 'bad'; b.textContent = ' · ' + fail + ' fail'; s.count.appendChild(b); }
+    }
+    const c = counts(dev);
+    const pct = (n) => (c.total ? (n / c.total) * 100 : 0) + '%';
+    const [pp, pf, pn] = r.bar.children;
+    pp.style.width = pct(c.pass);
+    pf.style.width = pct(c.fail);
+    pn.style.width = pct(c.na);
+    r.bar.setAttribute('aria-label', c.pass + ' passed, ' + c.fail + ' failed, ' + c.na + ' not applicable, of ' + c.total);
+    r.clear.disabled = !canWrite;
+  }
+
+  // ---------- Results tab ----------
+  let resultsRefs = null;
+  function buildResults() {
+    const panel = document.createElement('section');
+    panel.className = 'panel';
+    panel.id = 'panel-results';
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', 'tab-results');
+    panel.innerHTML = `
+      <div class="panel-head"><h2>Results</h2><span class="hint">Fills in from the device tabs. Red numbers miss the brief's targets.</span></div>
+      <div class="cards" id="res-cards"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Device</th><th>Model · OS / browser</th><th>RAM</th><th>Tier: start → 15 min</th><th>Garden fps</th><th>Pop / Trace / Basket fps</th><th>ready</th><th>Offline</th><th>Install</th><th>Checks</th><th>Open bugs</th></tr></thead>
+        <tbody id="res-body"></tbody>
+      </table></div>
+      <h2>File a bug</h2>
+      <form class="bug" id="bug-form" novalidate>
+        <div class="row2">
+          <label class="lbl">Device<select id="bug-device"></select></label>
+          <label class="lbl">What went wrong<input type="text" id="bug-title" maxlength="160" placeholder="e.g. Basket drag jumps when a second finger touches"></label>
+        </div>
+        <fieldset class="sev" style="border:0;padding:0;margin:0"><legend class="lbl" style="margin-bottom:6px">How bad</legend></fieldset>
+        <label class="lbl">Steps to reproduce, expected and actual<textarea id="bug-steps" placeholder="1. Open C (Basket)&#10;2. Drag the cat, touch with a second finger&#10;Expected: the cat keeps following&#10;Actual: the cat jumps to the second finger"></textarea></label>
+        <div class="row2">
+          <label class="lbl">Overlay at the time<input type="text" id="bug-overlay" placeholder="fps 24 · calls 71 · tier low · geo 44 tex 33"></label>
+          <label class="lbl">Build and URL<input type="text" id="bug-build" placeholder="QA build, http://192.168.1.20:4174/?dev=perf"></label>
+        </div>
+        <label class="lbl">Console lines ([quality], [timing], errors)<textarea id="bug-console"></textarea></label>
+        <div class="b-actions"><button class="btn primary" type="submit" id="bug-submit">File bug</button><span class="form-msg" id="bug-msg" role="status"></span></div>
+      </form>
+      <h2>Bugs</h2>
+      <div class="bugs" id="bug-list"></div>
+      <h2>Known, don't file</h2>
+      <ul class="known" id="known"></ul>`;
+    const sevBox = panel.querySelector('.sev');
+    SEVERITY.forEach(([v, label], i) => {
+      const l = document.createElement('label');
+      l.innerHTML = '<input type="radio" name="bug-sev">';
+      const inp = l.querySelector('input');
+      inp.value = v;
+      inp.id = 'bug-sev-' + v;
+      if (i === 1) inp.checked = true;
+      l.append(' ' + label);
+      sevBox.appendChild(l);
+    });
+    const devSel = panel.querySelector('#bug-device');
+    for (const d of DEVICES) devSel.add(new Option(d.name, d.id));
+    const known = panel.querySelector('#known');
+    for (const k of KNOWN) { const li = document.createElement('li'); li.textContent = k; known.appendChild(li); }
+
+    const form = panel.querySelector('#bug-form');
+    const msg = panel.querySelector('#bug-msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = panel.querySelector('#bug-title').value.trim();
+      msg.className = 'form-msg';
+      if (!title) { msg.classList.add('err'); msg.textContent = 'Add a short description of what went wrong.'; panel.querySelector('#bug-title').focus(); return; }
+      if (!canWrite) { msg.classList.add('err'); msg.textContent = 'This view can\'t save bugs.'; return; }
+      const bug = {
+        device: devSel.value,
+        title,
+        severity: (form.querySelector('input[name="bug-sev"]:checked') || {}).value || 'annoying',
+        steps: panel.querySelector('#bug-steps').value.trim(),
+        overlay: panel.querySelector('#bug-overlay').value.trim(),
+        build: panel.querySelector('#bug-build').value.trim(),
+        console: panel.querySelector('#bug-console').value.trim(),
+        status: 'open',
+        createdAt: new Date().toISOString(),
+      };
+      const submit = panel.querySelector('#bug-submit');
+      submit.disabled = true;
+      try {
+        if (mode === 'local') { bug.id = 'local-' + Date.now(); bugs = [bug, ...bugs]; writeLocal(); renderBugs(); }
+        else { await db.collection('bugs').add(bug); }
+        for (const id of ['bug-title', 'bug-steps', 'bug-overlay', 'bug-console']) panel.querySelector('#' + id).value = '';
+        msg.classList.add('ok');
+        msg.textContent = 'Filed.';
+      } catch (err) {
+        msg.classList.add('err');
+        msg.textContent = (err && err.code) === 'quota_exceeded' ? 'The bug list is full. Delete fixed bugs, then file again.' : 'Not filed (' + ((err && err.code) || 'error') + '). Try again.';
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    if (active !== 'results' && DEVICES.some((d) => d.id === active)) devSel.value = active;
+    resultsRefs = { panel, cards: panel.querySelector('#res-cards'), body: panel.querySelector('#res-body'), list: panel.querySelector('#bug-list'), devSel };
+    return panel;
+  }
+
+  function chip(text, cls) {
+    const s = document.createElement('span');
+    s.className = 'chip ' + cls;
+    s.textContent = text;
+    return s;
+  }
+  function statusChip(v) {
+    if (v === 'pass') return chip('pass', 'pass');
+    if (v === 'fail') return chip('fail', 'fail');
+    if (v === 'na') return chip('n/a', 'na');
+    return document.createTextNode('—');
+  }
+  function numCell(td, value, field) {
+    const n = numberOf(value);
+    if (n === null) { td.append('—'); return; }
+    const s = document.createElement('span');
+    s.textContent = String(value).trim();
+    if (field && field.target && !field.target.ok(n)) s.className = 'off';
+    td.appendChild(s);
+  }
+
+  function renderResults() {
+    if (!resultsRefs) return;
+    const { cards, body } = resultsRefs;
+    let started = 0, fails = 0, checked = 0, total = 0;
+    body.innerHTML = '';
+    for (const d of DEVICES) {
+      const st = view(d.id);
+      const v = st.values || {};
+      const ch = st.checks || {};
+      const c = counts(d.id);
+      if (c.done) started++;
+      fails += c.fail;
+      checked += c.done;
+      total += c.total;
+      const tr = document.createElement('tr');
+      const cell = (cls) => { const td = document.createElement('td'); if (cls) td.className = cls; tr.appendChild(td); return td; };
+      cell().textContent = d.name;
+      cell().textContent = [v.model, v.os].filter(Boolean).join(' · ') || '—';
+      cell().textContent = v.ram || '—';
+      cell('num').textContent = v.tierStart || v.tierEnd ? (v.tierStart || '?') + ' → ' + (v.tierEnd || '?') : '—';
+      numCell(cell('num'), v.fpsGarden, fieldById.fpsGarden);
+      const games = cell('num');
+      ['fpsPop', 'fpsTrace', 'fpsBasket'].forEach((id, i) => { if (i) games.append(' / '); numCell(games, v[id], fieldById[id]); });
+      const ready = cell('num');
+      numCell(ready, v.ready, fieldById.ready);
+      if (numberOf(v.ready) !== null) ready.append(' s');
+      cell().appendChild(statusChip(ch.airplane));
+      cell().appendChild(statusChip(ch.install));
+      const checks = cell('num');
+      checks.textContent = c.done + '/' + c.total;
+      if (c.fail) { checks.append(' '); checks.appendChild(chip(c.fail + ' fail', 'fail')); }
+      cell('num').textContent = String(bugs.filter((b) => b.device === d.id && b.status !== 'fixed').length);
+      body.appendChild(tr);
+    }
+    const open = bugs.filter((b) => b.status !== 'fixed');
+    cards.innerHTML = '';
+    for (const [value, label] of [
+      [started + ' of ' + DEVICES.length, 'devices started'],
+      [checked + ' / ' + total, 'checks recorded'],
+      [String(fails), 'checks failed'],
+      [String(open.length), 'open bugs (' + open.filter((b) => b.severity === 'blocks').length + ' blocking)'],
+    ]) {
+      const c = document.createElement('div');
+      c.className = 'stat';
+      c.innerHTML = '<span class="v"></span><span class="k"></span>';
+      c.querySelector('.v').textContent = value;
+      c.querySelector('.k').textContent = label;
+      cards.appendChild(c);
+    }
+  }
+
+  function renderBugs() {
+    if (!resultsRefs) return;
+    const list = resultsRefs.list;
+    list.innerHTML = '';
+    if (!bugs.length) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'No bugs filed yet. Use the form above when something goes wrong on a device.';
+      list.appendChild(p);
+    }
+    const sevName = Object.fromEntries(SEVERITY);
+    const devName = Object.fromEntries(DEVICES.map((d) => [d.id, d.name]));
+    for (const b of bugs) {
+      const card = document.createElement('article');
+      card.className = 'bugcard';
+      card.dataset.status = b.status === 'fixed' ? 'fixed' : 'open';
+      const head = document.createElement('div');
+      head.className = 'b-head';
+      const title = document.createElement('span');
+      title.className = 'b-title';
+      title.textContent = b.title || '(untitled)';
+      head.append(title, chip(devName[b.device] || b.device || '?', 'dev'), chip(sevName[b.severity] || 'Annoying', b.severity === 'blocks' ? 'fail' : 'na'), chip(b.status === 'fixed' ? 'fixed' : 'open', b.status === 'fixed' ? 'pass' : 'open'));
+      card.appendChild(head);
+      const dl = document.createElement('dl');
+      for (const [k, label, pre] of [['steps', 'Steps', false], ['overlay', 'Overlay', false], ['build', 'Build', false], ['console', 'Console', true]]) {
+        if (!b[k]) continue;
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        if (pre) { const p = document.createElement('pre'); p.textContent = b[k]; dd.appendChild(p); } else dd.textContent = b[k];
+        dl.append(dt, dd);
+      }
+      if (dl.children.length) card.appendChild(dl);
+      const actions = document.createElement('div');
+      actions.className = 'b-actions';
+      const when = document.createElement('span');
+      when.className = 'empty';
+      const t = b.createdAt ? new Date(b.createdAt) : null;
+      when.textContent = t && !isNaN(t) ? 'Filed ' + t.toLocaleString() : '';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'btn';
+      toggle.textContent = b.status === 'fixed' ? 'Reopen' : 'Mark fixed';
+      toggle.disabled = !canWrite;
+      toggle.addEventListener('click', () => updateBug(b, { status: b.status === 'fixed' ? 'open' : 'fixed' }));
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn danger';
+      del.textContent = 'Delete';
+      del.disabled = !canWrite;
+      const sure = document.createElement('span');
+      sure.hidden = true;
+      sure.innerHTML = 'Delete this bug for good? <button type="button" class="btn danger" data-a="yes">Delete</button> <button type="button" class="btn" data-a="no">Keep</button>';
+      del.addEventListener('click', () => { sure.hidden = false; del.hidden = true; });
+      sure.querySelector('[data-a="no"]').addEventListener('click', () => { sure.hidden = true; del.hidden = false; });
+      sure.querySelector('[data-a="yes"]').addEventListener('click', () => deleteBug(b));
+      actions.append(toggle, del, sure, when);
+      card.appendChild(actions);
+      list.appendChild(card);
+    }
+    refreshTabs();
+    renderResults();
+  }
+
+  async function updateBug(b, patch) {
+    if (mode === 'local') { Object.assign(b, patch); writeLocal(); renderBugs(); return; }
+    try { await db.doc('bugs/' + b.id).update(patch); }
+    catch (e) { setSync('error', 'Not saved (' + ((e && e.code) || 'error') + ')'); }
+  }
+  async function deleteBug(b) {
+    if (mode === 'local') { bugs = bugs.filter((x) => x !== b); writeLocal(); renderBugs(); return; }
+    try { await db.doc('bugs/' + b.id).delete(); }
+    catch (e) { setSync('error', 'Not deleted (' + ((e && e.code) || 'error') + ')'); }
+  }
+
+  function renderAll() {
+    for (const d of DEVICES) refreshDevice(d.id);
+    refreshTabs();
+    renderBugs();
+  }
+
+  // ---------- Build the page (complete before any store answers) ----------
+  for (const d of DEVICES) { const p = buildDevice(d); panelsEl.appendChild(p); panelEls[d.id] = p; }
+  const rp = buildResults();
+  panelsEl.appendChild(rp);
+  panelEls.results = rp;
+  select(active);
+  renderAll();
+  for (const btn of document.querySelectorAll('[data-copy]')) {
+    btn.addEventListener('click', () => {
+      const src = document.getElementById(btn.dataset.copy);
+      const text = src.textContent;
+      const done = () => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1500); };
+      try {
+        navigator.clipboard.writeText(text).then(done, () => selectText(src));
+      } catch (e) { selectText(src); }
+    });
+  }
+  function selectText(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.replace('#', '');
+    if (TABS.some((t) => t.id === h)) select(h);
+  });
+
+  // ---------- Connect the shared store ----------
+  const use = (name) => (window.claude && typeof window.claude.use === 'function' ? window.claude.use(name) : Promise.resolve(null));
+  (async () => {
+    const [store, user] = await Promise.all([use('db'), use('user')]);
+    if (!store) {
+      mode = 'local';
+      readLocal();
+      for (const d of DEVICES) {
+        clearTimeout(timers[d.id]);
+        if (pending[d.id]) { server[d.id] = merge(server[d.id] || {}, pending[d.id]); delete pending[d.id]; }
+      }
+      writeLocal();
+      setSync('local', 'Not syncing');
+      banner('Results are only kept in this browser. Open this page signed in to claude.ai to sync them across devices.');
+      renderAll();
+      return;
+    }
+    db = store;
+    if (user) {
+      try { const may = await user.can('data.write'); if (may === false) canWrite = false; } catch (e) { /* keep inputs */ }
+    }
+    if (!canWrite) {
+      setSync('error', 'View only');
+      banner('You can see these results but not change them. Ask the owner for Contributor access to record results.');
+    }
+    db.collection('devices').onSnapshot((snap) => {
+      for (const doc of snap.docs) {
+        server[doc.id] = doc.data() || {};
+        exists[doc.id] = true;
+      }
+      devicesLoaded = true;
+      if (mode === 'connecting') { mode = 'synced'; if (canWrite) setSync('saved', 'Synced'); }
+      for (const d of DEVICES) refreshDevice(d.id);
+      refreshTabs();
+      renderResults();
+    }, (e) => {
+      setSync('error', 'Sync stopped (' + ((e && e.code) || 'error') + '). Reload to reconnect.');
+    });
+    db.collection('bugs').orderBy('createdAt', 'desc').onSnapshot((snap) => {
+      bugs = snap.docs.map((doc) => Object.assign({ id: doc.id }, doc.data()));
+      renderBugs();
+    }, (e) => {
+      setSync('error', 'Bug list stopped (' + ((e && e.code) || 'error') + ')');
+    });
+  })();
+})();
+</script>

@@ -1,5 +1,7 @@
 # Device QA checklist
 
+**Interactive version:** [Buzzy Device QA](https://claude.ai/artifact/5KtrcWGBhgJZzQ4FCXYet1) on claude.ai (private to the owner; share it with Contributor access for other testers). Results sync across devices. The page source is [docs/qa/buzzy-device-qa.html](qa/buzzy-device-qa.html); keep it in step with this file.
+
 Brief Phase 7: a device matrix covering a **low-end Android phone (Chrome)**, an **iPhone (Safari)**, an **iPad (Safari)** and **desktop Chrome**. It records fps, load time on Fast 4G, and bugs. Allow about 40 minutes per device. Fill in the results table at the end.
 
 ## 0. Setup
