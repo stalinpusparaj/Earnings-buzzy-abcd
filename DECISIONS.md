@@ -12,7 +12,7 @@
 | 2026-10-13 | VO uses `speechSynthesis` (en-IN, ta-IN when available, otherwise a chime). Recorded files plug in through `vo-manifest.json` with no code change. | Brief §6.4 placeholder plan. | — |
 | 2026-10-13 | Basket Match says the letter name ("Which one starts with C?") rather than a phoneme. | TTS reads phoneme spellings badly; recorded VO can switch `{sound}` to the real sound. | Phonetic spellings such as "kuh". |
 | 2026-10-13 | Sing-along stand-in: a camera rail past every bud with spoken lines. | No song or cue file exists yet. **TODO(content):** song + `cues.{lang}.json` + Cue Recorder. | Leaving the gazebo inert. |
-| 2026-10-13 | GLB textures shrunk to 512² JPEG (q85) before import. | Brings every model under 400 KB except the gazebo (519 KB, geometry-heavy), which needs meshopt in `optimize-assets`. | Shipping the raw 1.2–3.6 MB GLBs. |
+| 2026-10-13 | GLB textures shrunk to 512² JPEG (q85) before import. Superseded 2026-10-14 by `optimize-assets`. | Brought every model except the gazebo under 400 KB. | Shipping the raw 1.2–3.6 MB GLBs. |
 | 2026-10-13 | No `ASSETS.md` licence log, by the owner's choice. | Owner instruction. Brief §10.6 asks for one before shipping to schools. | — |
 | 2026-10-13 | `vite-plugin-pwa@2.0.0` (dev; pulls `workbox-build`/`workbox-window` 7.4.1). Ships `sw.js` 0.9 KB + Workbox runtime 7.1 KB gzip. | The brief's choice; supports Vite 8; generates the precache manifest from the build. | A hand-written service worker: less tooling, but the precache list and revisioning would need maintaining by hand. |
 | 2026-10-13 | Precache the app shell only (13 files); models and audio use runtime CacheFirst (`buzzy-packs`). On a first visit the game waits ≤ 4 s for the worker to control the page before loading models. | Each model is downloaded once, and all 18 are cached after one visit (the other language warms in the background). | Precaching every GLB: downloads ~3.9 MB twice on the first visit. |
@@ -22,12 +22,16 @@
 | 2026-10-13 | E2E runs a production-optimised `--mode e2e` build that exposes `window.__buzzy`; the test hook is compiled out of the real production bundle. | Lets tests drive moving 3D targets reliably without shipping test code. | Testing the dev server (no service worker, unminified code). |
 | 2026-10-13 | Tamil glyph screenshot tests capture a static 2D Glyph Sheet (`/?dev=glyphs`) drawn with the game's own glyph functions, not the 3D scene. Plus an ink-signature check (has ink, isn't the missing-glyph box, all six distinct). | Deterministic pixels; the WebGL scene animates and its anti-aliasing varies by GPU. The signature check catches a broken font even if someone accepts a bad baseline. | Screenshotting the running game. |
 | 2026-10-13 | Screenshot baselines are per platform (`*-darwin.png` committed); 1% pixel tolerance, and tighter per-pixel colour matching on the tracing boards because the letter is faint there. | Fonts differ by OS. A mutation check (ஆ swapped for அ) fails three tests. | One cross-platform baseline: needs a self-hosted font first (Baloo Thambi 2), which would also make CI baselines match macOS. |
+| 2026-10-14 | `scripts/optimize-assets.ts`: in place, idempotent (stamped `buzzyPipeline: 1`), simplify only over budget, WebP ≤ 512², meshopt compression. Models went from 3.9 MB to 1.4 MB, and the gazebo from 519 KB to 208 KB. | Brief Phase 6; any AI-made GLB can be dropped in. Before/after renders differ by ≤ 0.2% of pixels per model. The one visible change is a small wedge at the fly's wing root, from trimming it to its 2,000-triangle budget. | KTX2 textures: needs a ~200 KB WASM transcoder at runtime. Draco: a larger decoder than meshopt. |
+| 2026-10-14 | Dev dependencies for the pipeline (0 KB shipped): `@gltf-transform/core`, `functions`, `extensions` 4.5.1; `meshoptimizer` 1.3.0; `sharp` 0.35.5 (prebuilt binary, no install script). Runtime: three's bundled `MeshoptDecoder` (+~8 KB gzip). | Standard glTF tooling; the decoder is self-hosted inside the bundle. | — |
+| 2026-10-14 | CSP `script-src 'self' 'wasm-unsafe-eval'`. | The meshopt decoder compiles WebAssembly. This allows WASM only, not JavaScript `eval`. | Uncompressed GLBs (would break the size budgets). |
+| 2026-10-14 | `scripts/check-budgets.ts` runs at the end of `npm run build` and fails it on any exceeded budget (69 checks). Per-model triangle budgets live in `scripts/model-budgets.json`. | Brief §7.4: "the build fails if any is exceeded". | A CI-only check. |
 | 2026-10-13 | Tamil stroke files for ஆ and உ are placeholders. | Brief: the owner authors Tamil stroke order with `/?dev=strokes`. | — |
 
 ## Not built yet (from the brief)
 
 - Lighthouse / installability check in CI
-- `scripts/check-budgets.ts`, `scripts/optimize-assets.ts` (gltf-transform + meshopt), `scripts/build-letters.ts`
+- `scripts/build-letters.ts` (font-outline glyphs; needs self-hosted fonts first)
 - Automatic quality-tier downgrade while playing (a tier is picked at boot)
 - Cue Recorder (`/?dev=cues`) and the recorded song
 - Tamil text for the grown-ups area and `privacy.html`

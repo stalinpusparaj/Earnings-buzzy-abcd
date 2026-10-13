@@ -1,0 +1,26 @@
+{
+  "_note": "Per-model triangle budgets from ASSET_PROMPTS.md §4 and BUILD_PROMPT.md §7.4. optimize-assets simplifies anything over budget; check-budgets fails the build. Add a row when you add a model (default applies otherwise).",
+  "maxBytes": 409600,
+  "maxTexture": 512,
+  "defaultTris": 3000,
+  "tris": {
+    "buzzy": 8000,
+    "apple": 1500,
+    "bee": 2000,
+    "cat": 3000,
+    "duck": 3000,
+    "egg": 800,
+    "fish": 2000,
+    "squirrel": 3000,
+    "goat": 3000,
+    "leaf": 800,
+    "fly": 2000,
+    "ural": 2000,
+    "swing": 2000,
+    "bud": 2000,
+    "bloom": 3000,
+    "basket": 2000,
+    "gazebo": 5000,
+    "tree": 1500
+  }
+}

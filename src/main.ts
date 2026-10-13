@@ -33,6 +33,10 @@ async function boot(): Promise<void> {
     await (await import('./dev/glyphSheet')).mountGlyphSheet(app);
     return;
   }
+  if ((import.meta.env.DEV || import.meta.env.MODE === 'e2e') && devTool === 'models') {
+    await (await import('./dev/modelGallery')).mountModelGallery(app);
+    return;
+  }
 
   const quality = pickQuality();
   const save = loadSave();

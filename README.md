@@ -11,7 +11,9 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests: trace rules, content + i18n checks
 npm run e2e        # Playwright end-to-end tests (uses your installed Google Chrome)
-npm run build      # type-check + production build into dist/ (includes the service worker)
+npm run build      # type-check + production build into dist/ (service worker included) + budget check
+npm run optimize-assets   # process new/changed GLBs in public/assets/models (see below)
+npm run check-budgets     # full budget report against dist/ (the build runs it with --quiet)
 ```
 
 ### End-to-end tests
@@ -38,6 +40,7 @@ Production builds include a service worker (`vite-plugin-pwa`, `sw.js`) and a we
 Dev-only tools (stripped from production builds):
 
 - `/?dev=perf`: fps, draw calls, triangles, GPU memory
+- `/?dev=models`: Model Gallery. All 18 GLBs in a grid with the game's toon shading; add `&spin=0` to freeze. Use it after `npm run optimize-assets`.
 - `/?dev=glyphs`: Glyph Sheet. Every letter drawn exactly as the game draws it (bubble, badge, 3D-letter face, tracing board). Use it for the Tamil review. Also available in the e2e build.
 - `/?dev=strokes`: Stroke Editor. Pick a letter, click to place points, Enter ends a stroke, Export copies the JSON for `src/data/strokes/{lang}/{id}.json`.
 
@@ -57,10 +60,19 @@ All URLs are relative (`base: './'`), so `dist/` works under any path, e.g. `htt
 - **Grown-ups:** hold the top-right button for 3 s, then solve the number challenge. Inside: language, tracing difficulty, volume, reset progress, letters learned, privacy note.
 - **Gentle stop:** after 6 letters or 15 minutes, Buzzy yawns. Nothing is blocked.
 
+## Asset pipeline
+
+1. Drop a GLB from an AI 3D tool (Higgsfield, Meshy, Tripo…) into `public/assets/models/{id}.glb`.
+2. Add its triangle budget to `scripts/model-budgets.json` (the default is 3,000).
+3. Run `npm run optimize-assets`. Per file, in place: dedup + weld, simplify only if it's over budget, textures to WebP at most 512², meshopt geometry compression. Processed files are stamped, so re-runs skip them (`--force` redoes them, `npm run optimize-assets -- gazebo` limits the run).
+4. Check it in `/?dev=models`, then `npm run build`. The build fails if any budget in brief §7.4 is exceeded (JS, transfer to start and to playable, letter packs, GLB size, triangles, texture size). Draw calls are checked by the e2e suite.
+
+The game's loader decodes meshopt with the decoder bundled in the JS. That's why the CSP allows `'wasm-unsafe-eval'` (WebAssembly only, not JavaScript eval).
+
 ## Add a letter (no code changes)
 
 1. Add an entry to `src/data/letters.{lang}.json` (see `LetterDef` in `src/core/types.ts`).
-2. Add the object model to `public/assets/models/{objectModel}.glb`.
+2. Add the object model to `public/assets/models/{objectModel}.glb` and run `npm run optimize-assets`.
 3. For a `traceTrail` letter, add `src/data/strokes/{lang}/{id}.json` (author it with `/?dev=strokes`).
 4. Add `{id}_sound` and `{id}_isfor` lines to `src/data/vo-manifest.json`.
 5. Run `npm test`. The content test checks every field, model, stroke file and voice line.
@@ -75,7 +87,7 @@ Edit `src/data/brand.config.json` (`partnerName`, `partnerLogo`, `accentColor`, 
 
 ## Assets
 
-- **Higgsfield (AI-generated):** Buzzy, apple, bee, cat, duck, egg, fish, squirrel, goat, leaf, fly, ural, swing, bud, bloom, basket, gazebo and tree, as GLBs with textures shrunk to 512².
+- **Higgsfield (AI-generated):** Buzzy, apple, bee, cat, duck, egg, fish, squirrel, goat, leaf, fly, ural, swing, bud, bloom, basket, gazebo and tree. Run through `optimize-assets`: 1.4 MB in total, each within its triangle budget.
 - **Built in code** (`src/procedural/`): island, path, pond, sky, clouds, rocks, bushes, grass, flowers, glyphs, bubbles, picnic cloth, tracing board and shadows.
 - **Synthesised in code** (`src/core/audio.ts`): all sound effects and the background music.
 - **Voice-over:** the browser's speech synthesis until recorded files are listed in `vo-manifest.json`.

@@ -13,6 +13,7 @@ import {
   type Material,
   type Object3D,
 } from 'three';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Shared 3-step toon ramp (brief §4) used by every material in the game.
@@ -41,7 +42,8 @@ export function toon(color: ColorRepresentation): MeshToonMaterial {
 export const vertexToon = new MeshToonMaterial({ vertexColors: true, gradientMap: ramp });
 vertexToon.userData.shared = true;
 
-const loader = new GLTFLoader();
+// Models are meshopt-compressed by scripts/optimize-assets.ts; the decoder ships inside the bundle (self-hosted).
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map<string, Promise<Group>>();
 const modelUrl = (id: string) => `${import.meta.env.BASE_URL}assets/models/${id}.glb`;
 
