@@ -1,0 +1,11 @@
+{
+  "_review": "REVIEW(ta): words, glyphs and romanisation to be verified against the Tamil Nadu primer.",
+  "letters": [
+    { "id": "ta_a", "lang": "ta", "glyph": "அ", "word": "அணில்", "wordRoman": "aṇil (squirrel)", "objectModel": "squirrel", "template": "pollenPop", "distractors": ["ஆ", "இ", "ஈ", "உ", "ஊ"], "matchDistractors": [], "vo": { "intro": "ta_a_isfor", "isFor": "ta_a_isfor", "sound": "ta_a_sound" } },
+    { "id": "ta_aa", "lang": "ta", "glyph": "ஆ", "word": "ஆடு", "wordRoman": "āṭu (goat)", "objectModel": "goat", "template": "traceTrail", "distractors": [], "matchDistractors": [], "vo": { "intro": "ta_aa_isfor", "isFor": "ta_aa_isfor", "sound": "ta_aa_sound" } },
+    { "id": "ta_i", "lang": "ta", "glyph": "இ", "word": "இலை", "wordRoman": "ilai (leaf)", "objectModel": "leaf", "template": "basketMatch", "distractors": [], "matchDistractors": ["squirrel", "ural"], "vo": { "intro": "ta_i_isfor", "isFor": "ta_i_isfor", "sound": "ta_i_sound" } },
+    { "id": "ta_ii", "lang": "ta", "glyph": "ஈ", "word": "ஈ", "wordRoman": "ī (housefly)", "objectModel": "fly", "template": "pollenPop", "distractors": ["அ", "ஆ", "இ", "உ", "ஊ"], "matchDistractors": [], "vo": { "intro": "ta_ii_isfor", "isFor": "ta_ii_isfor", "sound": "ta_ii_sound" } },
+    { "id": "ta_u", "lang": "ta", "glyph": "உ", "word": "உரல்", "wordRoman": "ural (stone mortar)", "objectModel": "ural", "template": "traceTrail", "distractors": [], "matchDistractors": [], "vo": { "intro": "ta_u_isfor", "isFor": "ta_u_isfor", "sound": "ta_u_sound" } },
+    { "id": "ta_uu", "lang": "ta", "glyph": "ஊ", "word": "ஊஞ்சல்", "wordRoman": "ūñcal (swing)", "objectModel": "swing", "template": "basketMatch", "distractors": [], "matchDistractors": ["goat", "fly"], "vo": { "intro": "ta_uu_isfor", "isFor": "ta_uu_isfor", "sound": "ta_uu_sound" } }
+  ]
+}

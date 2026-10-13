@@ -1,0 +1,10 @@
+{
+  "letters": [
+    { "id": "A", "lang": "en", "glyph": "A", "word": "Apple", "objectModel": "apple", "template": "pollenPop", "distractors": ["B", "D", "E", "F"], "matchDistractors": [], "vo": { "intro": "A_isfor", "isFor": "A_isfor", "sound": "A_sound" } },
+    { "id": "B", "lang": "en", "glyph": "B", "word": "Bee", "objectModel": "bee", "template": "traceTrail", "distractors": [], "matchDistractors": [], "vo": { "intro": "B_isfor", "isFor": "B_isfor", "sound": "B_sound" } },
+    { "id": "C", "lang": "en", "glyph": "C", "word": "Cat", "objectModel": "cat", "template": "basketMatch", "distractors": [], "matchDistractors": ["duck", "fish"], "vo": { "intro": "C_isfor", "isFor": "C_isfor", "sound": "C_sound" } },
+    { "id": "D", "lang": "en", "glyph": "D", "word": "Duck", "objectModel": "duck", "template": "pollenPop", "distractors": ["B", "C", "E", "F"], "matchDistractors": [], "vo": { "intro": "D_isfor", "isFor": "D_isfor", "sound": "D_sound" } },
+    { "id": "E", "lang": "en", "glyph": "E", "word": "Egg", "objectModel": "egg", "template": "traceTrail", "distractors": [], "matchDistractors": [], "vo": { "intro": "E_isfor", "isFor": "E_isfor", "sound": "E_sound" } },
+    { "id": "F", "lang": "en", "glyph": "F", "word": "Fish", "objectModel": "fish", "template": "basketMatch", "distractors": [], "matchDistractors": ["apple", "cat"], "vo": { "intro": "F_isfor", "isFor": "F_isfor", "sound": "F_sound" } }
+  ]
+}
