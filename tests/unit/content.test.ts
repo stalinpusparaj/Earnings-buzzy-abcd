@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest';
 import en from '../../src/data/letters.en.json';
 import ta from '../../src/data/letters.ta.json';
 import manifest from '../../src/data/vo-manifest.json';
+import cuesEn from '../../src/data/cues.en.json';
+import cuesTa from '../../src/data/cues.ta.json';
+import songs from '../../src/data/songs.json';
+import { validateCues } from '../../src/core/cues';
 import type { LetterDef } from '../../src/core/types';
 
 const root = join(__dirname, '../..');
@@ -71,5 +75,19 @@ describe('adding a letter needs no code', () => {
     // Letter G as a test fixture: one JSON entry reusing existing assets.
     const G: LetterDef = { id: 'G', lang: 'en', glyph: 'G', word: 'Goat', objectModel: 'goat', template: 'basketMatch', distractors: [], matchDistractors: ['cat', 'fish'], vo: { intro: 'A_isfor', isFor: 'A_isfor', sound: 'A_sound' } };
     expect(problems(G)).toEqual([]);
+  });
+});
+
+describe('sing-along data', () => {
+  it('cue files are valid for their language', () => {
+    expect(validateCues(cuesEn, en.letters)).toEqual([]);
+    expect(validateCues(cuesTa, ta.letters)).toEqual([]);
+  });
+
+  it('listed songs exist under public/', () => {
+    for (const lang of ['en', 'ta'] as const) {
+      const path = (songs as Record<string, string | null>)[lang];
+      if (path) expect(existsSync(join(root, 'public', path)), path).toBe(true);
+    }
   });
 });

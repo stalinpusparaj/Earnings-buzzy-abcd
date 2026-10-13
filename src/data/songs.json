@@ -1,0 +1,5 @@
+{
+  "_note": "Path of each language's sing-along song under public/ (e.g. \"assets/audio/song.en.mp3\"), or null until it exists. Used by the Cue Recorder (and the sing-along).",
+  "en": null,
+  "ta": null
+}

@@ -43,6 +43,7 @@ Testing on phones and tablets: `npm run qa` builds the QA version and serves it 
 Dev-only tools (stripped from production builds; also in the QA build):
 
 - `/?dev=perf`: fps, draw calls, triangles, GPU memory, quality tier and pixel ratio, and `ready` (seconds until the Play button appears)
+- `/?dev=cues`: Cue Recorder. Load the song, press Record, and tap each letter's key (1–6, or A–F in English) as it's sung; Preview replays it and reports how late each cue fires; Save file exports `cues.{lang}.json`. Also in the QA build.
 - `/?dev=models`: Model Gallery. All 18 GLBs in a grid with the game's toon shading; add `&spin=0` to freeze. Use it after `npm run optimize-assets`.
 - `/?dev=glyphs`: Glyph Sheet. Every letter drawn exactly as the game draws it (bubble, badge, 3D-letter face, tracing board). Use it for the Tamil review. Also available in the e2e build.
 - `/?dev=strokes`: Stroke Editor. Pick a letter, click to place points, Enter ends a stroke, Export copies the JSON for `src/data/strokes/{lang}/{id}.json`.
@@ -87,6 +88,15 @@ All URLs are relative (`base: './'`), so `dist/` works under any path, e.g. `htt
 4. Check it in `/?dev=models`, then `npm run build`. The build fails if any budget in brief §7.4 is exceeded (JS, transfer to start and to playable, letter packs, GLB size, triangles, texture size). Draw calls are checked by the e2e suite.
 
 The game's loader decodes meshopt with the decoder bundled in the JS. That's why the CSP allows `'wasm-unsafe-eval'` (WebAssembly only, not JavaScript eval).
+
+## Sing-along song and cues
+
+1. Put the song in `public/assets/audio/` (e.g. `song.en.mp3`), and list it in `src/data/songs.json` (`"en": "assets/audio/song.en.mp3"`).
+2. `npm run dev`, open `/?dev=cues`, pick the language, press **Record** and tap each letter's key as it's sung.
+3. Press **Preview** and watch the tiles flash. Reaction time makes taps late, so **Shift all by** about −120 ms (or edit single times) until they land on the words. Preview also reports how late each cue fires.
+4. **Save file** and replace `src/data/cues.{lang}.json`. `npm test` validates it: known letter ids, times in order, every listed song file present.
+
+The sing-along still uses the spoken stand-in (camera rail plus spoken lines). Switching it to the song and these cues is the next step; `CueTracker` in `src/core/cues.ts` does the timing.
 
 ## Add a letter (no code changes)
 

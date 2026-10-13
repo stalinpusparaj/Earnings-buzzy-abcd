@@ -33,11 +33,13 @@
 | 2026-10-14 | Self-hosted fonts: Baloo 2 Latin + Baloo Thambi 2 Tamil, weight 800, from `@fontsource/baloo-2` and `@fontsource/baloo-thambi-2` 5.3.0 (dev deps, OFL 1.1), copied to `public/fonts/` by `npm run fonts` with `OFL.txt`. 36 KB in total, precached for offline. | Brief §7.3 fonts. Script-level subsets (all of Latin, all of Tamil) instead of per-letter ones, so adding a letter never needs a new font build. | Subsetting to the exact glyphs in use: saves ~25 KB but breaks the "new letter = JSON only" rule. |
 | 2026-10-14 | Fonts load through the FontFace API as one family ("Buzzy Glyph") split by unicode-range, and the game waits for them before drawing any letter texture (max 4 s, then platform fonts). | Canvas text never waits for web fonts, so without this the first textures would be drawn in a fallback font and cached that way. | CSS `@font-face` alone. |
 | 2026-10-14 | The tracing board places the letter exactly as the Stroke Editor shows it (centred, ink filling 90% of the box: `TRACE_GLYPH_FIT`). The B and E paths were re-derived from Baloo's measured geometry (stem, bar and bowl centrelines). | Before, the board fitted the letter to the path's bounds and the editor centred it, so authored paths couldn't line up; and Baloo is heavier than the font the old paths followed. | Fitting the letter to the path (letters drift as paths change). |
+| 2026-10-14 | Cue Recorder (`/?dev=cues`, dev + QA builds): records cues from key presses (1–6, or A–F in English) or tile taps against `audio.currentTime`; waveform with markers; undo, shift-all and per-cue edits; paste-in import; Preview with a lateness report; exports `cues.{lang}.json`. `src/core/cues.ts` holds validation and `CueTracker`, which the song-driven sing-along will reuse. | Brief §5.6 / Phase 3. A test with a generated dummy song shows every cue firing within 50 ms (Phase 3 acceptance). | Recording against a Web Audio clock (more code; the media element's clock is what playback uses anyway). |
+| 2026-10-14 | Songs are listed in `src/data/songs.json` (null until a file exists) instead of probing for `song.{lang}.mp3`. | A probe for a missing file logs a 404 console error and fails the e2e error check; an explicit list is also what the sing-along will read. | Probing a conventional path. |
 | 2026-10-13 | Tamil stroke files for ஆ and உ are placeholders. | Brief: the owner authors Tamil stroke order with `/?dev=strokes`. | — |
 
 ## Not built yet (from the brief)
 
 - Lighthouse / installability check in CI
-- Cue Recorder (`/?dev=cues`) and the recorded song
+- The recorded song, and switching the sing-along from spoken lines to song + cues
 - Tamil text for the grown-ups area and `privacy.html`
 - Separately animated Buzzy wings and eyes (the GLB has them fused to the body)
