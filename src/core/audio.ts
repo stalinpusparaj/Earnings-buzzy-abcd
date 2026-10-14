@@ -1,12 +1,13 @@
 // Web Audio wrapper: music / SFX buses with ducking (brief §8). Every sound is
 // synthesised here, so the game ships with no audio files until real VO arrives.
-import { PlaybackSession } from './audioSession';
+import { PlaybackSession, silentWav } from './audioSession';
 
 export type SfxName = 'pop' | 'boop' | 'chime' | 'whoosh' | 'bloom' | 'celebrate' | 'buzz';
 
 const MUSIC_LEVEL = 0.35;
 const MUSIC_DUCKED = 0.12;
 const SFX_LEVEL = 0.7;
+const SONG_LEVEL = 0.9;
 const BEAT = 60 / 100; // 100 bpm
 // I–V–vi–IV in C: bass note + chord tones (Hz)
 const CHORDS = [
@@ -27,6 +28,11 @@ export class AudioEngine {
   private nextBeatTime = 0;
   private beat = 0;
   private volume = 1;
+  private songBus: GainNode | null = null;
+  private media: HTMLAudioElement | null = null; // the one song element, unlocked on the first tap
+  private songUrl = '';
+  private mediaWasPlaying = false;
+  private musicHeld = false;
   /** iOS silent-switch handling (see audioSession.ts). */
   readonly session = new PlaybackSession();
 
@@ -43,6 +49,8 @@ export class AudioEngine {
       this.master.connect(this.ctx.destination);
       this.sfxBus = this.bus(SFX_LEVEL);
       this.musicBus = this.bus(MUSIC_LEVEL);
+      this.songBus = this.bus(SONG_LEVEL);
+      this.unlockSongElement();
       this.noise = this.makeNoise();
       // iOS can suspend the context again later; resume on the next touch.
       window.addEventListener('touchend', () => void this.resume(), { passive: true });
@@ -53,11 +61,89 @@ export class AudioEngine {
   async resume(): Promise<void> {
     this.session.resume();
     if (this.ctx && this.ctx.state !== 'running') await this.ctx.resume().catch(() => undefined);
+    if (this.media && this.mediaWasPlaying) {
+      this.mediaWasPlaying = false;
+      void this.media.play().catch(() => undefined);
+    }
   }
 
   suspend(): void {
     this.session.pause();
+    // A song keeps its own clock: pause it too, or it would play on silently and lose sync.
+    if (this.media && !this.media.paused) {
+      this.mediaWasPlaying = true;
+      this.media.pause();
+    }
     void this.ctx?.suspend().catch(() => undefined);
+  }
+
+  /** Hold the generative music (while the sing-along song plays) or let it continue. */
+  holdMusic(held: boolean): void {
+    this.musicHeld = held;
+    if (!held && this.ctx) this.nextBeatTime = this.ctx.currentTime + 0.1;
+  }
+
+  get musicIsHeld(): boolean {
+    return this.musicHeld;
+  }
+
+  get songPlaying(): boolean {
+    return !!this.media && !!this.songUrl && !this.media.paused;
+  }
+
+  /**
+   * iOS only lets a media element play from a tap, and the song starts seconds after the
+   * gazebo tap. So the one song element is created and played (silently) inside the first
+   * Play tap, which unlocks it for later play() calls. It is wired through the song bus
+   * once (an element can only be connected once), so volume and mute apply to the song.
+   */
+  private unlockSongElement(): void {
+    if (!this.ctx || !this.songBus || this.media) return;
+    const el = new Audio(URL.createObjectURL(new Blob([silentWav(0.1) as BlobPart], { type: 'audio/wav' })));
+    el.setAttribute('playsinline', '');
+    el.preload = 'auto';
+    this.ctx.createMediaElementSource(el).connect(this.songBus);
+    this.media = el;
+    void el.play().then(() => el.pause(), () => undefined);
+  }
+
+  /**
+   * Fetch the whole song (through the offline cache), then play it from memory. Downloading
+   * it whole avoids range requests, which iOS Safari needs answered with 206 partial
+   * responses that a cache can't give. Resolves null when the song can't be loaded
+   * (for example offline before it was ever cached).
+   */
+  async loadSong(url: string): Promise<HTMLAudioElement | null> {
+    const el = this.media;
+    if (!el) return null;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      this.stopSong();
+      const objectUrl = URL.createObjectURL(blob);
+      this.songUrl = objectUrl;
+      await new Promise<void>((resolve) => {
+        el.addEventListener('canplaythrough', () => resolve(), { once: true });
+        el.addEventListener('error', () => resolve(), { once: true });
+        el.src = objectUrl;
+        el.load();
+      });
+      return el.error ? null : el;
+    } catch {
+      return null;
+    }
+  }
+
+  stopSong(): void {
+    const el = this.media;
+    if (!el) return;
+    this.mediaWasPlaying = false;
+    el.pause();
+    if (this.songUrl) {
+      URL.revokeObjectURL(this.songUrl);
+      this.songUrl = '';
+    }
   }
 
   setVolume(v: number): void {
@@ -167,7 +253,7 @@ export class AudioEngine {
   private scheduleMusic(): void {
     const ctx = this.ctx;
     const out = this.musicBus;
-    if (!ctx || !out || ctx.state !== 'running') return;
+    if (!ctx || !out || ctx.state !== 'running' || this.musicHeld) return;
     while (this.nextBeatTime < ctx.currentTime + 0.3) {
       const t = this.nextBeatTime;
       const chord = CHORDS[Math.floor(this.beat / 4) % CHORDS.length];

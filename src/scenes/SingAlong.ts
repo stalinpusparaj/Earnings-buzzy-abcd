@@ -14,15 +14,17 @@ export type SingDeps = {
   say: (id: string) => Promise<void>;
   closeUp: (bud: Bud) => Pose;
   alive: () => boolean;
+  /** The song version already said the intro before finding no playable song. */
+  skipIntro?: boolean;
 };
 
 /**
- * Sing-along stand-in until the recorded song and cue file exist
- * (TODO(content): song + cues.{lang}.json). The camera rails past every bud in
- * order; each one bounces and Buzzy says its line. Big glyph + object, no karaoke text.
+ * Spoken sing-along: the fallback while a language has no song and cues (src/data/songs.json,
+ * cues.{lang}.json), or when the song can't be loaded. The camera rails past every bud in
+ * order; each one bounces and Buzzy says its line. The song version is SongSingAlong.ts.
  */
 export async function playSingAlong(buds: Bud[], d: SingDeps): Promise<void> {
-  await d.say('sing_intro');
+  if (!d.skipIntro) await d.say('sing_intro');
   for (const bud of buds) {
     if (!d.alive()) return;
     const pose = d.closeUp(bud);

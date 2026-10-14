@@ -7,6 +7,7 @@ import { Input } from './core/input';
 import { Loop } from './core/loop';
 import { pickQuality, settingsFor, type Tier } from './core/quality';
 import { FrameGovernor } from './core/qualityGovernor';
+import { overrideSong, prefetchSong, type Cue } from './core/cues';
 import { loadGlyphFonts } from './core/fonts';
 import { enableOffline } from './core/offline';
 import { createRenderContext } from './core/renderer';
@@ -126,6 +127,7 @@ async function boot(): Promise<void> {
   if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') Object.assign(window, {
       __buzzy: { game, rig, camera: rc.camera, renderer: rc.renderer, tweens, garden, stage, loop, particles, governor, audio,
         quality: () => ({ tier: governor.tier, dpr: rc.renderer.getPixelRatio(), particles: particles.limit, avgMs: governor.averageMs }),
+        setSong: (lang: 'en' | 'ta', url: string | null, cues: Cue[] = []) => overrideSong(lang, url ? { url, cues } : null),
         setTier: (t: Tier) => {
           governor.tier = t;
           applyTier(t);
@@ -141,6 +143,7 @@ async function boot(): Promise<void> {
   void game.begin();
   // Warm the other language's models in the background (offline-friendly later).
   void preload(modelIdsFor(save.lang === 'en' ? 'ta' : 'en'));
+  prefetchSong(save.lang);
 }
 
 void boot();

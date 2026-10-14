@@ -1,3 +1,4 @@
+import songs from '../data/songs.json';
 import type { Lang, LetterDef } from './types';
 
 // Sing-along cues (brief §5.6): src/data/cues.{lang}.json → [{ "id": "A", "t": 4.20 }, …],
@@ -13,6 +14,31 @@ export function cuesFor(lang: Lang): Cue[] {
 }
 
 export const roundCueTime = (t: number) => Math.round(t * 100) / 100;
+
+export type Song = { url: string; cues: Cue[] };
+const overrides: Partial<Record<Lang, Song | null>> = {};
+
+/**
+ * The sing-along song for a language: its file (src/data/songs.json) and its cues. Null
+ * until both exist, and then the sing-along uses its spoken stand-in instead.
+ */
+export function songFor(lang: Lang): Song | null {
+  if (lang in overrides) return overrides[lang] ?? null;
+  const path = (songs as Record<string, unknown>)[lang];
+  const cues = cuesFor(lang);
+  return typeof path === 'string' && path && cues.length ? { url: `${import.meta.env.BASE_URL}${path}`, cues } : null;
+}
+
+/** Test hook (dev and e2e builds only): play this song for a language, or null for none. */
+export function overrideSong(lang: Lang, song: Song | null): void {
+  overrides[lang] = song;
+}
+
+/** Warm the offline cache with a language's song, so the sing-along also works offline. */
+export function prefetchSong(lang: Lang): void {
+  const song = songFor(lang);
+  if (song && !song.url.startsWith('data:')) void fetch(song.url).catch(() => undefined);
+}
 
 /**
  * Problems that make a cue list unusable (empty when valid): not an array, unknown letter

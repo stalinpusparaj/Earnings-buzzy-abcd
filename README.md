@@ -76,7 +76,7 @@ All URLs are relative (`base: './'`), so `dist/` works under any path, e.g. `htt
   - Pollen Pop: pop the 3 bubbles carrying the letter.
   - Trace the Trail: trace the strokes in order; Buzzy follows the finger only while it's on the path.
   - Basket Match: drag the object that starts with the letter into Buzzy's basket, over 2 rounds.
-- **Sing-along:** tap the gazebo. Until the recorded song exists, the camera visits every bud in order and Buzzy says each line.
+- **Sing-along:** tap the gazebo. It plays the language's song with buds reacting on their cues (see "Sing-along song and cues"); until a song exists, Buzzy says each bud's line instead.
 - **Grown-ups:** hold the top-right button for 3 s, then solve the number challenge. Inside: language, tracing difficulty, volume, reset progress, letters learned, privacy note.
 - **Gentle stop:** after 6 letters or 15 minutes, Buzzy yawns. Nothing is blocked.
 
@@ -96,7 +96,7 @@ The game's loader decodes meshopt with the decoder bundled in the JS. That's why
 3. Press **Preview** and watch the tiles flash. Reaction time makes taps late, so **Shift all by** about −120 ms (or edit single times) until they land on the words. Preview also reports how late each cue fires.
 4. **Save file** and replace `src/data/cues.{lang}.json`. `npm test` validates it: known letter ids, times in order, every listed song file present.
 
-The sing-along still uses the spoken stand-in (camera rail plus spoken lines). Switching it to the song and these cues is the next step; `CueTracker` in `src/core/cues.ts` does the timing.
+With a song and cues for the language, tapping the gazebo plays the song. Buzzy introduces it first; the generated background music pauses for it. At each cue that letter's bud bounces, pollen bursts, and its big glyph and 3D object pop up above it. Buzzy and the camera arrive at each bud on its cue, and fast stretches (cues under 1.1 s apart, like a chorus naming A to F) keep the wide shot. Home stops the song at once, and the song pauses whenever the game goes to the background. Without a song, or if it can't be loaded, Buzzy says each bud's line instead. The current language's song is prefetched after start, so the sing-along also works offline.
 
 ## Add a letter (no code changes)
 

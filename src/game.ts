@@ -3,6 +3,7 @@ import type { AudioEngine } from './core/audio';
 import { preload } from './core/assets';
 import type { CameraRig } from './core/cameraRig';
 import { lettersFor, modelIdsFor } from './core/content';
+import { prefetchSong, songFor } from './core/cues';
 import { pick, type GamePointerEvent, type Input } from './core/input';
 import type { Loop } from './core/loop';
 import type { Quality } from './core/quality';
@@ -21,6 +22,7 @@ import type { GardenScene } from './scenes/GardenScene';
 import { playLetterIntro } from './scenes/LetterIntro';
 import type { PlayStage } from './scenes/PlayStage';
 import { playSingAlong } from './scenes/SingAlong';
+import { playSongSingAlong, type SongResult } from './scenes/SongSingAlong';
 import type { Hud } from './ui/hud';
 import { openParentGate } from './ui/parentGate';
 import { openParentZone } from './ui/parentZone';
@@ -57,6 +59,8 @@ export class Game {
   private readonly startedAt = performance.now();
   private sleepyDone = false;
   private bloomed: Set<string>;
+  /** Cues fired in the last song sing-along, with the song time each fired at (QA and tests). */
+  readonly singLog: { id: string; t: number; at: number }[] = [];
   private lastVolume: number;
 
   constructor(private d: GameDeps) {
@@ -182,13 +186,28 @@ export class Game {
     await this.maybeSleepy();
   }
 
+  /** Gazebo: the language's song with its cues when both exist, otherwise the spoken stand-in. */
   private async singAlong(): Promise<void> {
-    const { rig, buzzy, audio, particles, garden } = this.d;
+    const { rig, buzzy, audio, particles, garden, rc, loop, save } = this.d;
     const id = ++this.flowId;
+    const alive = () => id === this.flowId;
     this.setMode('sing');
     audio.play('buzz');
-    await playSingAlong(garden.buds, { rig, buzzy, particles, audio, say: this.say, closeUp: (b) => garden.closeUpPose(b, this.aspect), alive: () => id === this.flowId });
-    if (id === this.flowId) await this.returnToGarden(id);
+    this.singLog.length = 0;
+    const closeUp = (b: Bud) => garden.closeUpPose(b, this.aspect);
+    const song = songFor(save.lang);
+    let result: SongResult = 'unavailable';
+    if (song) {
+      result = await playSongSingAlong(garden.buds, song, {
+        scene: rc.scene, camera: rc.camera, loop, rig, buzzy, particles, audio, say: this.say,
+        overview: () => this.overview(), closeUp, alive,
+        onCue: (c, at) => this.singLog.push({ id: c.id, t: c.t, at }),
+      });
+    }
+    if (result === 'unavailable' && alive()) {
+      await playSingAlong(garden.buds, { rig, buzzy, particles, audio, say: this.say, closeUp, alive, skipIntro: !!song });
+    }
+    if (alive()) await this.returnToGarden(id);
   }
 
   /** Home icon: abandon the current flow (no penalty) and glide back to the garden. */
@@ -196,6 +215,8 @@ export class Game {
     if (this.mode === 'garden' || this.mode === 'start') return;
     const id = ++this.flowId;
     this.d.voice.stop();
+    this.d.audio.stopSong();
+    this.d.audio.holdMusic(false);
     if (this.mini) {
       this.mini.exit();
       this.mini = null;
@@ -232,6 +253,7 @@ export class Game {
     const before = this.mode;
     this.setMode('busy');
     await preload(modelIdsFor(lang));
+    prefetchSong(lang);
     await garden.setLanguage(lang, this.bloomed);
     this.d.audio.play('bloom');
     this.setMode(before === 'parent' ? 'parent' : 'garden');
